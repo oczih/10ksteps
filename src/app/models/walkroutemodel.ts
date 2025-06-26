@@ -7,7 +7,7 @@ const walkRouteSchema = new mongoose.Schema({
     distance: { type: Number, required: true},
     calories: { type: Number, required: true},
     pace: { type: Number, required: true},
-    routing: { type: String, required: true},
+    coordinates: { type: Array, required: true},
     routeName: { type: String, required: true},
     routeDescription: { type: String, required: true},
     madeFor: [

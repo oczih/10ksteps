@@ -3,17 +3,17 @@ import NextAuth from "next-auth";
 export interface WalkRoute {
     id: string;                // because of toJSON transform
     steps: number;
-    date: string;              // ISO date string (because JSON serializes Date)
+    date: Date;              // ISO date string (because JSON serializes Date)
     time: number;
     distance: number;
     calories: number;
     pace: number;
-    routing: string;
+    coordinates: [number, number][];  // Array of [longitude, latitude] tuples
     routeName: string;
     routeDescription: string;
-    madeFor: string[];         // array of user IDs (ObjectId as strings)
+    madeFor: string;         // array of user IDs (ObjectId as strings)
   }
-
+export type WalkRouteEntry = Omit<WalkRoute, 'id' | 'madeFor'>;
 export type User = {
     _id: string,
   username: string
@@ -27,7 +27,8 @@ export type User = {
   gender: string
   activityLevel: string
   goal: string
-  goalWeight: number
+  goalWeight: number,
+  pace: number,
   googleId: string | null
 }
 
@@ -40,6 +41,7 @@ declare module "next-auth" {
       weight?: number;
       height?: number;
       gender?: string;
+      pace?: number;
       activityLevel?: string;
       goal?: string;
       goalWeight?: number;

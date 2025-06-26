@@ -1,17 +1,26 @@
 'use client';
 
 import { Header } from "@/components/Header";
-import { User } from "@/types";
-import { useState } from "react";
+import { UserProvider } from "@/app/context/UserContext";
 
-const App = () => {
-  const [user, setUser] = useState<User | null>(null);
+export default function Page() {
+  return (
+    <UserProvider>
+      <App />
+    </UserProvider>
+  );
+}
+
+// Separate the app logic
+import { useUser } from "@/app/context/UserContext";
+
+function App() {
+  const { user, setUser } = useUser();
+
   return (
     <div>
       <Header user={user} setUser={setUser} />
+      {/* You can now use user/setUser anywhere */}
     </div>
-  )
+  );
 }
-
-
-export default App

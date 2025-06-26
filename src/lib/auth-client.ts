@@ -3,6 +3,7 @@ import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import client from "./db";
 import WalkUser from "@/app/models/usermodel"; // your Mongoose model
+import { connectDB } from "@/lib/mongoose";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: MongoDBAdapter(client),
@@ -11,7 +12,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async session({ session }) {
       if (!session.user?.email) return session;
-
+      await connectDB();
       const user = await WalkUser.findOne({ email: session.user.email });
 
       if (user) {
@@ -33,6 +34,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   events: {
     async signIn({ user, account }) {
+      await connectDB();
       const existingUser = await WalkUser.findOne({ email: user.email });
       if (!existingUser) {
         try {
