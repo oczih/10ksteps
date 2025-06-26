@@ -7,7 +7,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { User } from '@/types';
 import SignIn from './sign-in';
-
 export const Header = ({
   user: _user,
   setUser,
@@ -71,7 +70,11 @@ export const Header = ({
       );
     }
 
-    return <SignIn />;
+    return (
+      <>
+        <SignIn />
+      </>
+    )
   };
 
   return (

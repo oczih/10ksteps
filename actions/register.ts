@@ -1,5 +1,5 @@
 "use server"
-import { connectDB } from "../lib/mongoose";
+import { connectDB } from "../src/lib/mongoose";
 import WalkUser from "@/app/models/usermodel";
 import bcrypt from "bcryptjs";
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '../../../../../lib/mongoose';
+import { connectDB } from '../../../../lib/mongoose';
 import WalkRoute from '@/app/models/walkroutemodel';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {

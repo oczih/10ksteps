@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import GoogleProvider from "next-auth/providers/google";
-import client from "./lib/db";
+import client from "./db";
 import WalkUser from "@/app/models/usermodel"; // your Mongoose model
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
