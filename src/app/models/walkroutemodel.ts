@@ -7,7 +7,15 @@ const walkRouteSchema = new mongoose.Schema({
     distance: { type: Number, required: true},
     calories: { type: Number, required: true},
     pace: { type: Number, required: true},
-    coordinates: { type: Array, required: true},
+    coordinates: {
+      type: [[Number]],
+      required: true,
+      validate: {
+        validator: (arr) =>
+          Array.isArray(arr) && arr.every(coord => Array.isArray(coord) && coord.length === 2 && coord.every(Number.isFinite)),
+        message: 'Coordinates must be an array of [number, number] pairs',
+      },
+    },
     routeName: { type: String, required: true},
     routeDescription: { type: String, required: true},
     madeFor: [

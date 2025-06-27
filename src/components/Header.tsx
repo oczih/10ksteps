@@ -37,7 +37,6 @@ export const Header = ({
       return <span className="text-white">Loading...</span>;
     }
     if (session?.user) {
-      console.log(session.user);
 
       return (
         <>
@@ -53,7 +52,7 @@ export const Header = ({
               <div key={link.to}>
                 <Link
                   href={link.to}
-                  className={`btn btn-ghost font-bold transition duration-150 ${
+                  className={`btn btn-ghost font-bold transition duration-150 hover:bg-sky-500/50 ${
                     pathname === link.to ? 'text-yellow-300' : ''
                   }`}
                 >
@@ -62,7 +61,7 @@ export const Header = ({
               </div>
             ))}
 
-            <button onClick={handleSignOut} className="btn btn-outline text-white border-white">
+            <button onClick={handleSignOut} className="btn btn-outline text-white border-white hover:bg-sky-500/50">
               Sign Out
             </button>
           </div>
@@ -79,7 +78,7 @@ export const Header = ({
 
   return (
     <div className="w-full flex justify-center">
-      <div className="navbar bg-[#9D79BC] text-base-content rounded-box w-full max-w-6xl px-4 py-2 flex-col md:flex-row md:justify-between md:items-center gap-4">
+      <div className="navbar bg-[#1c232b] text-base-content rounded-box w-full max-w-6xl px-4 py-2 flex-col md:flex-row md:justify-between md:items-center gap-4">
         {renderAuth()}
       </div>
     </div>

@@ -7,7 +7,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const { id } = params;
   
     try {
-      const user = await WalkUser.findById(id);
+      const user = await WalkUser.findById(id).populate('walkingroutes');
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
