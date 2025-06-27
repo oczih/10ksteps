@@ -2,12 +2,15 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { sendPrompt } from '@/app/services/aiservice';
+import { scanForCoordinates, Coordinate } from '@/lib/coordinate-parser';
+import { useRoute } from '@/app/context/RouteContext';
 import ReactMarkdown from 'react-markdown';
 
 interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  coordinates?: Coordinate[];
 }
 
 interface ApiError {
@@ -19,8 +22,10 @@ export default function GeminiChat() {
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [sendingToMap, setSendingToMap] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const { addCoordinatesFromGemini } = useRoute();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -45,12 +50,23 @@ export default function GeminiChat() {
 
     try {
       const result = await sendPrompt(prompt, messages.map(m => m.text));
+      
+      // Scan for coordinates in the response
+      const coordinateResult = scanForCoordinates(result);
+      
       const aiMessage: Message = {
         text: result,
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
+        coordinates: coordinateResult.coordinates
       };
       setMessages(prev => [...prev, aiMessage]);
+      
+      // Log found coordinates for debugging
+      if (coordinateResult.hasCoordinates) {
+        console.log('Found coordinates:', coordinateResult.coordinates);
+      }
+      
     } catch (err) {
       const error = err as ApiError;
       const errorMessage: Message = {
@@ -70,10 +86,12 @@ export default function GeminiChat() {
       handleAsk();
     }
   };
+
   const handleChatClear = () => {
     setMessages([]);
     setPrompt('');
-  }
+  };
+
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -123,6 +141,32 @@ export default function GeminiChat() {
                   ) : (
                     <div className="prose prose-sm max-w-none dark:prose-invert">
                       <ReactMarkdown>{message.text}</ReactMarkdown>
+                      {message.coordinates && message.coordinates.length > 0 && (
+                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
+                          <p className="font-semibold text-green-800">📍 Found {message.coordinates.length} coordinate(s):</p>
+                          <p className="text-green-700 font-mono text-xs">
+                            {message.coordinates.map((coord, idx) => 
+                              `[${coord.latitude}, ${coord.longitude}]${idx < message.coordinates!.length - 1 ? ', ' : ''}`
+                            )}
+                          </p>
+                          <button
+                            onClick={async () => {
+                              setSendingToMap(true);
+                              addCoordinatesFromGemini(message.coordinates!);
+                              // Small delay to show the loading state
+                              setTimeout(() => setSendingToMap(false), 1000);
+                            }}
+                            disabled={sendingToMap}
+                            className={`mt-2 px-3 py-1 text-xs rounded transition-colors ${
+                              sendingToMap 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-blue-500 hover:bg-blue-600 text-white'
+                            }`}
+                          >
+                            {sendingToMap ? '🔄 Sending...' : '🗺️ Send to Map'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                   <p className={`text-xs mt-1 ${message.isUser ? 'text-blue-100' : 'text-gray-500'}`}>

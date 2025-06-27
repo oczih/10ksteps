@@ -13,7 +13,7 @@ export async function getGeminiResponse(prompt: string, messages: string[]) {
     Only answer questions related to walking routes and places along the way.\n
     Here are the previous questions messages from the the chat: ${messages.join('\n')}\n. When offering a route give it in the following format:
     Give a number of pins in a city in the coordinates format: lat,long. I.e.: [24.941512, 60.173241], make the route reasonable and according
-    to the route the user has asked for. Question: ${prompt}`;
+    to the route the user has asked for. Write the coordinates always at the end of the answer and at least 15 different coordinates. Question: ${prompt}`;
   
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",

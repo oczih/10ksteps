@@ -5,6 +5,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import routeservice from '@/app/services/routeservice';
 import { useUser } from '@/app/context/UserContext';
+import { useRoute } from '@/app/context/RouteContext';
 import { useSession } from 'next-auth/react';
 import toast, { Toaster } from 'react-hot-toast';
 import { WalkRoute } from '@/types';
@@ -12,6 +13,7 @@ import { WalkRoute } from '@/types';
 export default function RouteMap() {
   const { user, setUser } = useUser();
   const { data: session, status } = useSession();
+  const { coordinates: contextCoordinates, clearCoordinates } = useRoute();
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -23,8 +25,59 @@ export default function RouteMap() {
   const [pace, setPace] = useState<number>(0);
   const [savedRoutes, setSavedRoutes] = useState<WalkRoute[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<string>('');
-
+  const [useExactWaypoints, setUseExactWaypoints] = useState<boolean>(true);
+  const [center, setCenter] = useState<[number, number]>([24.941, 60.173]);
   mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || '';
+
+  // Handle coordinates from Gemini chat
+  useEffect(() => {
+    if (contextCoordinates.length > 0) {
+      console.log('Received coordinates from Gemini:', contextCoordinates);
+      setCoordinates(contextCoordinates);
+      
+      // Show success notification
+      toast.success(`🗺️ Added ${contextCoordinates.length} coordinates from AI to map!`, {
+        duration: 3000,
+        style: {
+          border: '1px solid #10b981',
+          padding: '16px',
+          color: '#065f46',
+        },
+        iconTheme: {
+          primary: '#10b981',
+          secondary: '#ffffff',
+        },
+      });
+      
+      // Clear the context coordinates after using them
+      clearCoordinates();
+    }
+  }, [contextCoordinates, clearCoordinates]);
+
+  // Handle routing mode changes
+  useEffect(() => {
+    if (coordinates.length >= 2) {
+      // Show notification about routing mode change
+      toast.success(
+        `Route recalculated using ${useExactWaypoints ? 'exact AI waypoints' : 'optimized path'}`, 
+        { 
+          duration: 2000,
+          style: {
+            border: '1px solid #3b82f6',
+            padding: '16px',
+            color: '#1e40af',
+          },
+          iconTheme: {
+            primary: '#3b82f6',
+            secondary: '#ffffff',
+          },
+        }
+      );
+      
+      // Recalculate route with new mode
+      updateRoute(coordinates);
+    }
+  }, [useExactWaypoints]);
 
   // Fetch saved routes
   useEffect(() => {
@@ -59,7 +112,7 @@ export default function RouteMap() {
     const map = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v11',
-      center: [24.941, 60.173], // default center
+      center: center, // default center
       zoom: 14,
     });
 
@@ -146,7 +199,7 @@ export default function RouteMap() {
   const handleRouteSelect = async (routeId: string) => {
     const route = savedRoutes.find(r => r.id === routeId);
     if (!route) return;
-
+    setCenter(route.coordinates[0]);
     setSelectedRoute(routeId);
     setCoordinates(route.coordinates);
     setSteps(route.steps);
@@ -246,17 +299,44 @@ export default function RouteMap() {
     }
 
     try {
-      const coordsString = points.map((coord) => coord.join(',')).join(';');
-      const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${coordsString}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
-      console.log('Fetching route from:', url);
-
-      const res = await fetch(url);
-      const data = await res.json();
-      console.log('Route data:', data);
+      let routeData: any;
       
-      const route = data.routes[0]?.geometry;
-      if (!route) {
-        console.error('No route found in response');
+      if (useExactWaypoints) {
+        // Create a custom route that follows the exact waypoints
+        routeData = await createCustomRoute(points);
+      } else {
+        // Use Mapbox's optimized route (original behavior)
+        const coordsString = points.map((coord) => coord.join(',')).join(';');
+        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${coordsString}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+        console.log('Fetching optimized route from:', url);
+
+        const res = await fetch(url);
+        const data = await res.json();
+        console.log('Optimized route data:', data);
+        
+        if (data.routes && data.routes[0]) {
+          routeData = {
+            type: 'FeatureCollection',
+            features: [{
+              type: 'Feature',
+              properties: {
+                totalDistance: data.routes[0].distance,
+                totalDuration: data.routes[0].duration,
+                waypointCount: points.length
+              },
+              geometry: data.routes[0].geometry
+            }],
+            properties: {
+              totalDistance: data.routes[0].distance,
+              totalDuration: data.routes[0].duration,
+              waypointCount: points.length
+            }
+          };
+        }
+      }
+      
+      if (!routeData) {
+        console.error('Failed to create route');
         return;
       }
 
@@ -281,19 +361,15 @@ export default function RouteMap() {
         console.error('Error removing old route:', error);
       }
 
-      // Add the route source and layer
+      // Add the custom route source and layer
       try {
-        console.log('Adding route source...');
+        console.log('Adding custom route source...');
         map.addSource('route', {
           type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: route
-          }
+          data: routeData
         });
 
-        console.log('Adding route layer...');
+        console.log('Adding custom route layer...');
         map.addLayer({
           id: 'route',
           type: 'line',
@@ -321,12 +397,13 @@ export default function RouteMap() {
         return;
       }
 
-      setSteps(Math.round(data.routes[0].distance/0.762));
-      setTime(Math.round(data.routes[0].duration/60));
-      setDistance(Math.round(data.routes[0].distance/1000));
+      // Update stats based on custom route
+      setSteps(Math.round(routeData.properties.totalDistance / 0.762));
+      setTime(Math.round(routeData.properties.totalDuration / 60));
+      setDistance(Math.round(routeData.properties.totalDistance / 1000));
       const MET = 3.8;
       const weightKg = session?.user?.weight ?? 70;
-      const durationHours = Math.round(data.routes[0].duration / 60) / 60;
+      const durationHours = Math.round(routeData.properties.totalDuration / 60) / 60;
       const estimatedCalories = Math.round(MET * weightKg * durationHours);
       setCalories(estimatedCalories);
 
@@ -338,6 +415,116 @@ export default function RouteMap() {
       toast.error('Failed to update route');
     }
   };
+
+  // Create a custom route that follows the exact waypoints
+  const createCustomRoute = async (points: [number, number][]): Promise<any> => {
+    if (points.length < 2) return null;
+
+    const features: any[] = [];
+    let totalDistance = 0;
+    let totalDuration = 0;
+
+    // Create route segments between consecutive waypoints
+    for (let i = 0; i < points.length - 1; i++) {
+      const start = points[i];
+      const end = points[i + 1];
+      
+      try {
+        // Get directions for this segment
+        const coordsString = `${start.join(',')};${end.join(',')}`;
+        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${coordsString}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.routes && data.routes[0]) {
+          const route = data.routes[0];
+          const segmentFeature = {
+            type: 'Feature',
+            properties: {
+              segment: i + 1,
+              distance: route.distance,
+              duration: route.duration
+            },
+            geometry: route.geometry
+          };
+          
+          features.push(segmentFeature);
+          totalDistance += route.distance;
+          totalDuration += route.duration;
+        } else {
+          // If Mapbox can't find a route, create a straight line
+          console.warn(`No route found for segment ${i + 1}, creating straight line`);
+          const straightLineFeature = {
+            type: 'Feature',
+            properties: {
+              segment: i + 1,
+              distance: calculateHaversineDistance(start, end),
+              duration: calculateHaversineDistance(start, end) / 1.4 // Assume 1.4 m/s walking speed
+            },
+            geometry: {
+              type: 'LineString',
+              coordinates: [start, end]
+            }
+          };
+          
+          features.push(straightLineFeature);
+          totalDistance += straightLineFeature.properties.distance;
+          totalDuration += straightLineFeature.properties.duration;
+        }
+      } catch (error) {
+        console.error(`Error getting route for segment ${i + 1}:`, error);
+        // Create a straight line as fallback
+        const straightLineFeature = {
+          type: 'Feature',
+          properties: {
+            segment: i + 1,
+            distance: calculateHaversineDistance(start, end),
+            duration: calculateHaversineDistance(start, end) / 1.4
+          },
+          geometry: {
+            type: 'LineString',
+            coordinates: [start, end]
+          }
+        };
+        
+        features.push(straightLineFeature);
+        totalDistance += straightLineFeature.properties.distance;
+        totalDuration += straightLineFeature.properties.duration;
+      }
+    }
+
+    // Create the final GeoJSON FeatureCollection
+    const customRoute = {
+      type: 'FeatureCollection',
+      features: features,
+      properties: {
+        totalDistance: totalDistance,
+        totalDuration: totalDuration,
+        waypointCount: points.length
+      }
+    };
+
+    console.log('Custom route created:', customRoute);
+    return customRoute;
+  };
+
+  // Calculate distance between two points using Haversine formula
+  const calculateHaversineDistance = (point1: [number, number], point2: [number, number]): number => {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = point1[1] * Math.PI / 180;
+    const φ2 = point2[1] * Math.PI / 180;
+    const Δφ = (point2[1] - point1[1]) * Math.PI / 180;
+    const Δλ = (point2[0] - point1[0]) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+  };
+
   const handleSaveRoute = async () => {
     const routeData = {
       date: new Date(),
@@ -383,10 +570,33 @@ export default function RouteMap() {
             <div className="flex justify-between items-center mb-4">
               <div className="alert alert-info flex-1 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span>Click on the map to add start, end, and waypoints!</span>
+                <span>Click on the map to add waypoints, or use the AI chat to get route coordinates!</span>
               </div>
               
               <div className="flex gap-2 items-center">
+                <div className="form-control">
+                  <label className="label cursor-pointer">
+                    <span className="label-text mr-2 flex items-center">
+                      <span className={`badge ${useExactWaypoints ? 'badge-primary' : 'badge-secondary'} mr-2`}>
+                        {useExactWaypoints ? 'AI Path' : 'Optimized'}
+                      </span>
+                      Exact Waypoints
+                    </span>
+                    <input 
+                      type="checkbox" 
+                      className="toggle toggle-primary" 
+                      checked={useExactWaypoints}
+                      onChange={(e) => setUseExactWaypoints(e.target.checked)}
+                    />
+                  </label>
+                  <div className="text-xs text-gray-500 max-w-xs">
+                    {useExactWaypoints 
+                      ? 'Follow the exact path suggested by AI (more accurate step count)' 
+                      : 'Use Mapbox\'s shortest route between points'
+                    }
+                  </div>
+                </div>
+
                 <select 
                   className="select select-bordered w-full max-w-xs"
                   value={selectedRoute}

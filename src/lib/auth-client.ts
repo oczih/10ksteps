@@ -7,7 +7,10 @@ import { connectDB } from "@/lib/mongoose";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: MongoDBAdapter(client),
-  providers: [GoogleProvider],
+  providers: [GoogleProvider({
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  })],
 
   callbacks: {
     async session({ session }) {
