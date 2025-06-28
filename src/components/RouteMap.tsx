@@ -13,6 +13,8 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { IOSSwitch } from './IOSSwitch';
 import { BsStars } from "react-icons/bs";
+import userservice from '@/app/services/userservice';
+import ChangePace from './ChangePace';
 // Define proper types for route data
 interface RouteFeature {
   type: 'Feature';
@@ -62,6 +64,7 @@ export default function RouteMap() {
   const [distance, setDistance] = useState<number>(0);
   const [calories, setCalories] = useState<number>(0);
   const [pace, setPace] = useState<number>(0);
+  const [originalDuration, setOriginalDuration] = useState<number>(0);
   const [savedRoutes, setSavedRoutes] = useState<WalkRoute[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<string>('');
   const [useExactWaypoints, setUseExactWaypoints] = useState<boolean>(true);
@@ -158,7 +161,7 @@ export default function RouteMap() {
     console.log('Initializing map...');
     const mapInstance = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v11',
+      style: 'mapbox://styles/arvom1/cmcdmsnxr019n01si7fvtg2pa',
       center: center,
       zoom: 14,
     });
@@ -325,6 +328,7 @@ export default function RouteMap() {
 
       console.log('Loading route from localStorage...');
       const route = JSON.parse(selectedRouteData);
+      console.log(route)
       setSelectedRoute(route.id);
       setCoordinates(route.coordinates);
       setSteps(route.steps);
@@ -425,6 +429,27 @@ export default function RouteMap() {
       updateRoute(coordinates);
     }
   }, [coordinates, editingmode]);
+
+  // Recalculate duration when pace changes
+  useEffect(() => {
+    if (originalDuration > 0 && pace > 0) {
+      // Calculate the base walking speed from original duration
+      const baseWalkingSpeed = 1.4; // m/s (5 km/h) - Mapbox's default walking speed
+      const newWalkingSpeed = pace * 1000 / 3600; // Convert km/h to m/s
+      
+      // Adjust time based on pace ratio
+      const paceRatio = baseWalkingSpeed / newWalkingSpeed;
+      const newTime = Math.round(originalDuration * paceRatio);
+      setTime(newTime);
+      
+      // Recalculate calories based on new time
+      const MET = 3.8;
+      const weightKg = session?.user?.weight ?? 70;
+      const durationHours = newTime / 60;
+      const estimatedCalories = Math.round(MET * weightKg * durationHours);
+      setCalories(estimatedCalories);
+    }
+  }, [pace, originalDuration, session?.user?.weight]);
 
   const updateRoute = async (points: [number, number][]) => {
     if (points.length < 2 || !mapRef.current) {
@@ -632,6 +657,7 @@ export default function RouteMap() {
 
       // Update stats based on custom route
       setSteps(Math.round(routeData.properties.totalDistance / 0.762));
+      setOriginalDuration(Math.round(routeData.properties.totalDuration / 60));
       setTime(Math.round(routeData.properties.totalDuration / 60));
       setDistance(Math.round(routeData.properties.totalDistance / 1000));
       const MET = 3.8;
@@ -967,6 +993,7 @@ export default function RouteMap() {
 
       // Update route statistics
       setSteps(Math.round(routeData.properties.totalDistance / 0.762));
+      setOriginalDuration(Math.round(routeData.properties.totalDuration / 60));
       setTime(Math.round(routeData.properties.totalDuration / 60));
       setDistance(Math.round(routeData.properties.totalDistance / 1000));
       const MET = 3.8;
@@ -1073,6 +1100,38 @@ export default function RouteMap() {
       handleSearch();
     }
   };
+
+  const handlePaceChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPace = parseInt(e.target.value);
+    setPace(newPace);
+    
+    if (!session?.user?.id) {
+      toast.error('User not logged in');
+      return;
+    }
+    
+    try {
+      await userservice.update(session.user.id, { pace: newPace });
+    } catch (error) {
+      console.error('Error updating pace:', error);
+    }
+  }
+
+  const handleSliderChange = async (event: Event, value: number | number[]) => {
+    const newPace = value as number;
+    setPace(newPace);
+    
+    if (!session?.user?.id) {
+      toast.error('User not logged in');
+      return;
+    }
+    
+    try {
+      await userservice.update(session.user.id, { pace: newPace });
+    } catch (error) {
+      console.error('Error updating pace:', error);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-base-200 p-6">
@@ -1254,21 +1313,7 @@ export default function RouteMap() {
                 </div>
 
                 {/* Save Route Form */}
-                <Box className="ml-10" sx={{ width: 300 }}>
-                <Typography id="input-slider" gutterBottom>
-                    Pace: {pace} km/h
-                  </Typography>
-                    <Slider
-                      aria-label="Pace"
-                      value={pace}
-                      onChange={(_, value) => setPace(value as number)}
-                      valueLabelDisplay="off"
-                      shiftStep={30}
-                      step={0.1}
-                      min={1}
-                      max={10}
-                    />
-                  </Box>
+                <ChangePace handleSliderChange={handleSliderChange} handlePaceChange={handlePaceChange} pace={pace} />
                 <div className="card bg-base-200 shadow-lg">
                   <div className="card-body">
                     <h3 className="card-title text-lg font-semibold mb-4">Save Your Route</h3>
@@ -1314,7 +1359,7 @@ export default function RouteMap() {
                 <div className="flex items-center gap-4">
                   <div className="form-control">
                     <label className="label cursor-pointer gap-2">
-                      <span className="label-text">Editing Mode</span>
+                      <span className="label-text">Free Drawing Mode</span>
                       <IOSSwitch checked={editingmode} onChange={handleEditingMode} />
                     </label>
                   </div>

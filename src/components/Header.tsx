@@ -20,7 +20,6 @@ export const Header = ({
 
   const navLinks = [
     { to: '/', label: 'Dashboard' },
-    { to: '/profile', label: 'Profile' },
     { to: '/map', label: 'Map' },
     { to: '/settings', label: 'Settings' },
   ];
