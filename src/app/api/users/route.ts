@@ -2,22 +2,28 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongoose';
 import WalkUser from '@/app/models/usermodel';
 
-export async function GET(
-  request: Request,
-  context: { params: { id: string } }
-) {
+export async function GET() {
   await connectDB();
-  const { id } = context.params;
 
   try {
-    const user = await WalkUser.findById(id).populate('walkingroutes');
-    if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ user });
+    const users = await WalkUser.find({}).populate('walkingroutes');
+    return NextResponse.json({ users });
   } catch (error) {
-    console.error('Error fetching user:', error);
+    console.error('Error fetching users:', error);
+    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  await connectDB();
+
+  try {
+    const body = await request.json();
+    const user = new WalkUser(body);
+    const savedUser = await user.save();
+    return NextResponse.json({ user: savedUser }, { status: 201 });
+  } catch (error) {
+    console.error('Error creating user:', error);
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }

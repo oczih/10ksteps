@@ -15,7 +15,8 @@ export interface UserDocument {
   activityLevel: string
   goal: string
   goalWeight: number
-  googleId: string | null
+  googleId: string | null,
+  pace: number,
 }
 
 
@@ -42,13 +43,13 @@ const userSchema = new Schema<UserDocument>({
     },
   ],
   weight: { type: Number, default: 0 },
-    height: { type: Number, default: 0 },
-    age: { type: Number, default: 0 },
-    gender: { type: String, default: "not specified" },
-    activityLevel: { type: String, default: "moderate" },
-    goal: { type: String, default: "maintain" },
-    goalWeight: { type: Number, default: 0 },
-
+  height: { type: Number, default: 0 },
+  age: { type: Number, default: 0 },
+  gender: { type: String, default: "not specified" },
+  activityLevel: { type: String, default: "moderate" },
+  goal: { type: String, default: "maintain" },
+  goalWeight: { type: Number, default: 0 },
+  pace: { type: Number, default: 0 },
   googleId: {
     type: String,
     default: null,

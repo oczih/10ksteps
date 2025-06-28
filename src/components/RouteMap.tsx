@@ -4,14 +4,41 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import routeservice from '@/app/services/routeservice';
-import { useUser } from '@/app/context/UserContext';
 import { useRoute } from '@/app/context/RouteContext';
 import { useSession } from 'next-auth/react';
 import toast, { Toaster } from 'react-hot-toast';
 import { WalkRoute } from '@/types';
+import Slider from '@mui/material/Slider';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+// Define proper types for route data
+interface RouteFeature {
+  type: 'Feature';
+  properties: {
+    segment?: number;
+    distance: number;
+    duration: number;
+    totalDistance?: number;
+    totalDuration?: number;
+    waypointCount?: number;
+  };
+  geometry: {
+    type: 'LineString';
+    coordinates: [number, number][];
+  };
+}
+
+interface RouteData {
+  type: 'FeatureCollection';
+  features: RouteFeature[];
+  properties: {
+    totalDistance: number;
+    totalDuration: number;
+    waypointCount: number;
+  };
+}
 
 export default function RouteMap() {
-  const { user, setUser } = useUser();
   const { data: session, status } = useSession();
   const { coordinates: contextCoordinates, clearCoordinates } = useRoute();
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -27,6 +54,9 @@ export default function RouteMap() {
   const [selectedRoute, setSelectedRoute] = useState<string>('');
   const [useExactWaypoints, setUseExactWaypoints] = useState<boolean>(true);
   const [center, setCenter] = useState<[number, number]>([24.941, 60.173]);
+  const [routeName, setRouteName] = useState<string>('');
+  const [routeDescription, setRouteDescription] = useState<string>('');
+  const [isLoadingLocation, setIsLoadingLocation] = useState<boolean>(false);
   mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || '';
 
   // Handle coordinates from Gemini chat
@@ -299,7 +329,7 @@ export default function RouteMap() {
     }
 
     try {
-      let routeData: any;
+      let routeData: RouteData | null = null;
       
       if (useExactWaypoints) {
         // Create a custom route that follows the exact waypoints
@@ -320,6 +350,8 @@ export default function RouteMap() {
             features: [{
               type: 'Feature',
               properties: {
+                distance: data.routes[0].distance,
+                duration: data.routes[0].duration,
                 totalDistance: data.routes[0].distance,
                 totalDuration: data.routes[0].duration,
                 waypointCount: points.length
@@ -417,10 +449,10 @@ export default function RouteMap() {
   };
 
   // Create a custom route that follows the exact waypoints
-  const createCustomRoute = async (points: [number, number][]): Promise<any> => {
+  const createCustomRoute = async (points: [number, number][]): Promise<RouteData | null> => {
     if (points.length < 2) return null;
 
-    const features: any[] = [];
+    const features: RouteFeature[] = [];
     let totalDistance = 0;
     let totalDuration = 0;
 
@@ -439,7 +471,7 @@ export default function RouteMap() {
         
         if (data.routes && data.routes[0]) {
           const route = data.routes[0];
-          const segmentFeature = {
+          const segmentFeature: RouteFeature = {
             type: 'Feature',
             properties: {
               segment: i + 1,
@@ -455,7 +487,7 @@ export default function RouteMap() {
         } else {
           // If Mapbox can't find a route, create a straight line
           console.warn(`No route found for segment ${i + 1}, creating straight line`);
-          const straightLineFeature = {
+          const straightLineFeature: RouteFeature = {
             type: 'Feature',
             properties: {
               segment: i + 1,
@@ -475,7 +507,7 @@ export default function RouteMap() {
       } catch (error) {
         console.error(`Error getting route for segment ${i + 1}:`, error);
         // Create a straight line as fallback
-        const straightLineFeature = {
+        const straightLineFeature: RouteFeature = {
           type: 'Feature',
           properties: {
             segment: i + 1,
@@ -495,7 +527,7 @@ export default function RouteMap() {
     }
 
     // Create the final GeoJSON FeatureCollection
-    const customRoute = {
+    const customRoute: RouteData = {
       type: 'FeatureCollection',
       features: features,
       properties: {
@@ -534,8 +566,8 @@ export default function RouteMap() {
       pace,
       steps,
       coordinates: coordinates,
-      routeName: 'New Route',
-      routeDescription: 'Description of the route',
+      routeName: routeName,
+      routeDescription: routeDescription,
       madeFor: session?.user?.id
     }
     console.log('Calories to send:', calories);
@@ -560,9 +592,70 @@ export default function RouteMap() {
       toast.error('Error saving route');
     }
   }
+
+  // Get user's current location
+  const getCurrentLocation = () => {
+    setIsLoadingLocation(true);
+    
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by this browser');
+      setIsLoadingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const newCenter: [number, number] = [longitude, latitude];
+        setCenter(newCenter);
+        
+        // Update map center if map exists
+        if (mapRef.current) {
+          mapRef.current.flyTo({
+            center: newCenter,
+            zoom: 14,
+            duration: 2000
+          });
+        }
+        
+        toast.success('📍 Map centered on your location!');
+        setIsLoadingLocation(false);
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        let errorMessage = 'Failed to get your location';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location permission denied. Please enable location access.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information unavailable.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out.';
+            break;
+        }
+        
+        toast.error(errorMessage);
+        setIsLoadingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
+  };
+
+  // Try to get user location on component mount
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+
   return (
     <div className="min-h-screen bg-base-200 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-10xl mx-auto space-y-6">
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
             <h2 className="card-title text-2xl font-bold text-center mb-4">Create Your Walking Route</h2>
@@ -619,51 +712,121 @@ export default function RouteMap() {
                   </svg>
                   Clear Map
                 </button>
+
+                <button 
+                  className={`btn btn-primary btn-outline ${isLoadingLocation ? 'loading' : ''}`}
+                  onClick={getCurrentLocation}
+                  disabled={isLoadingLocation}
+                >
+                  {!isLoadingLocation && (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  {isLoadingLocation ? 'Getting Location...' : 'My Location'}
+                </button>
               </div>
             </div>
 
-            <div ref={mapContainer} className="h-[600px] w-full rounded-xl overflow-hidden shadow-lg border-4 border-base-300" />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 ">
-              <div className="stats shadow hover:bg-base-200 transition duration-100">
-                <div className="stat">
-                  <div className="stat-title">Steps</div>
-                  <div className="stat-value text-primary">{steps ? steps.toLocaleString() : '0'}</div>
-                </div>
+            <div className="flex gap-6">
+              {/* Left side - Map */}
+              <div className="flex-1">
+                <div ref={mapContainer} className="h-[700px] w-full rounded-xl overflow-hidden shadow-lg border-4 border-base-300" />
               </div>
 
-              <div className="stats shadow hover:drop-shadow-xl hover:bg-base-200 transition duration-100">
-                <div className="stat">
-                  <div className="stat-title">Walking Time</div>
-                  <div className="stat-value text-secondary">{time ? `~${time} min` : '0 min'}</div>
+              {/* Right side - Form and Stats */}
+              <div className="w-96 space-y-6">
+                {/* Stats Section */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="stats shadow hover:bg-base-200 transition duration-100">
+                    <div className="stat">
+                      <div className="stat-title">Steps</div>
+                      <div className="stat-value text-primary">{steps ? steps.toLocaleString() : '0'}</div>
+                    </div>
+                  </div>
+
+                  <div className="stats shadow hover:drop-shadow-xl hover:bg-base-200 transition duration-100">
+                    <div className="stat">
+                      <div className="stat-title">Walking Time</div>
+                      <div className="stat-value text-secondary">{time ? `~${time} min` : '0 min'}</div>
+                    </div>
+                  </div>
+
+                  <div className="stats shadow hover:bg-base-200 transition duration-100">
+                    <div className="stat">
+                      <div className="stat-title">Distance</div>
+                      <div className="stat-value text-accent">{distance ? `${distance} km` : '0 km'}</div>
+                    </div>
+                  </div>
+
+                  <div className="stats shadow hover:bg-base-200 transition duration-100">
+                    <div className="stat">
+                      <div className="stat-title">Calories</div>
+                      <div className="stat-value text-info">{calories ? calories.toLocaleString() : '0'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save Route Form */}
+                <Box sx={{ width: 300 }}>
+                <Typography id="input-slider" gutterBottom>
+                    Pace
+                  </Typography>
+                    <Slider
+                      aria-label="Pace"
+                      value={pace}
+                      onChange={(_, value) => setPace(value as number)}
+                      getAriaValueText={(value) => `${value} km/h`}
+                      valueLabelDisplay="auto"
+                      shiftStep={30}
+                      step={0.1}
+                      min={1}
+                      max={10}
+                    />
+                  </Box>
+                <div className="card bg-base-200 shadow-lg">
+                  <div className="card-body">
+                    <h3 className="card-title text-lg font-semibold mb-4">Save Your Route</h3>
+                    <form onSubmit={(e) => { e.preventDefault(); handleSaveRoute(); }} className="space-y-4">
+                      <div className="form-control">
+                        <label className="label">
+                          <span className="label-text font-medium">Route Name</span>
+                        </label>
+                        <input 
+                          type="text" 
+                          className="input input-bordered w-full" 
+                          placeholder="My Route" 
+                          value={routeName} 
+                          onChange={(e) => setRouteName(e.target.value)} 
+                        />
+                      </div>
+                      
+                      <div className="form-control">
+                        <label className="label">
+                          <span className="label-text font-medium">Route Description</span>
+                        </label>
+                        <input 
+                          type="text" 
+                          className="input input-bordered w-full" 
+                          placeholder="Walk around the city" 
+                          value={routeDescription} 
+                          onChange={(e) => setRouteDescription(e.target.value)} 
+                        />
+                      </div>
+                      
+                      <button 
+                        className="btn btn-primary btn-lg gap-2 w-full" 
+                        type="submit"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
+                        Save Route
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </div>
-
-              <div className="stats shadow hover:bg-base-200 transition duration-100">
-                <div className="stat">
-                  <div className="stat-title">Distance</div>
-                  <div className="stat-value text-accent">{distance ? `${distance} km` : '0 km'}</div>
-                </div>
-              </div>
-
-              <div className="stats shadow hover:bg-base-200 transition duration-100">
-                <div className="stat">
-                  <div className="stat-title">Calories</div>
-                  <div className="stat-value text-info">{calories ? calories.toLocaleString() : '0'}</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="card-actions justify-end mt-6">
-              <button 
-                className="btn btn-primary btn-lg gap-2" 
-                onClick={handleSaveRoute}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                </svg>
-                Save Route
-              </button>
             </div>
           </div>
         </div>
