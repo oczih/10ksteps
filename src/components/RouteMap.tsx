@@ -11,6 +11,8 @@ import { WalkRoute } from '@/types';
 import Slider from '@mui/material/Slider';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { IOSSwitch } from './IOSSwitch';
+import { BsStars } from "react-icons/bs";
 // Define proper types for route data
 interface RouteFeature {
   type: 'Feature';
@@ -38,6 +40,16 @@ interface RouteData {
   };
 }
 
+interface MapboxFeature {
+  place_name: string;
+  center: [number, number];
+}
+
+interface SearchSuggestion {
+  place_name: string;
+  center: [number, number];
+}
+
 export default function RouteMap() {
   const { data: session, status } = useSession();
   const { coordinates: contextCoordinates, clearCoordinates } = useRoute();
@@ -57,6 +69,11 @@ export default function RouteMap() {
   const [routeName, setRouteName] = useState<string>('');
   const [routeDescription, setRouteDescription] = useState<string>('');
   const [isLoadingLocation, setIsLoadingLocation] = useState<boolean>(false);
+  const [editingmode, setEditingmode] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || '';
 
   // Handle coordinates from Gemini chat
@@ -64,7 +81,7 @@ export default function RouteMap() {
     if (contextCoordinates.length > 0) {
       console.log('Received coordinates from Gemini:', contextCoordinates);
       setCoordinates(contextCoordinates);
-      
+      setCenter(contextCoordinates[0]);
       // Show success notification
       toast.success(`🗺️ Added ${contextCoordinates.length} coordinates from AI to map!`, {
         duration: 3000,
@@ -139,60 +156,166 @@ export default function RouteMap() {
     }
 
     console.log('Initializing map...');
-    const map = new mapboxgl.Map({
+    const mapInstance = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/streets-v11',
-      center: center, // default center
+      center: center,
       zoom: 14,
     });
 
-    map.addControl(new mapboxgl.NavigationControl());
-    mapRef.current = map;
+    mapInstance.addControl(new mapboxgl.NavigationControl());
+    mapRef.current = mapInstance;
 
     // Wait for map to load before allowing interactions
-    map.on('load', () => {
+    mapInstance.on('load', () => {
       console.log('Map loaded initially');
       
-      // Set up click handler after map is loaded
-      map.on('click', (e) => {
-        e.preventDefault();
-        const newCoord: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-        setCoordinates((prev) => [...prev, newCoord]);
-        
-        const marker = new mapboxgl.Marker({ color: 'red' })
-          .setLngLat(newCoord)
-          .addTo(map);
-        
-        markersRef.current.push(marker);
+      // Add source and layer for temporary lines between markers
+      mapInstance.addSource('temp-route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: []
+          }
+        }
       });
 
-      // If there are existing coordinates, add them to the map
-      if (coordinates.length > 0) {
-        coordinates.forEach(coord => {
-          const marker = new mapboxgl.Marker({ color: 'red' })
-            .setLngLat(coord)
-            .addTo(map);
-          markersRef.current.push(marker);
-        });
-
-        const bounds = new mapboxgl.LngLatBounds();
-        coordinates.forEach(coord => bounds.extend(coord));
-        map.fitBounds(bounds, { padding: 50 });
-
-        if (coordinates.length >= 2) {
-          updateRoute(coordinates);
+      mapInstance.addLayer({
+        id: 'temp-route',
+        type: 'line',
+        source: 'temp-route',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+          visibility: 'visible'
+        },
+        paint: {
+          'line-color': '#ff0000',
+          'line-width': 3,
+          'line-opacity': 0.7
         }
-      }
+      });
+      
+      // Set up click handler after map is loaded
+      mapInstance.on('click', (e: mapboxgl.MapMouseEvent) => {
+        e.preventDefault();
+        const newCoord: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+        
+        if (editingmode) {
+          // In editing mode, just add markers without updating route
+          const marker = new mapboxgl.Marker({ color: 'red' })
+            .setLngLat(newCoord)
+            .addTo(mapInstance);
+          
+          markersRef.current.push(marker);
+          setCoordinates(prev => {
+            const newCoords = [...prev, newCoord];
+            
+            // Only add temp-route if we have at least 2 points
+            if (newCoords.length >= 2) {
+              // Create temp-route source if it doesn't exist
+              if (!mapInstance.getSource('temp-route')) {
+                mapInstance.addSource('temp-route', {
+                  type: 'geojson',
+                  data: {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: {
+                      type: 'LineString',
+                      coordinates: []
+                    }
+                  }
+                });
+
+                mapInstance.addLayer({
+                  id: 'temp-route',
+                  type: 'line',
+                  source: 'temp-route',
+                  layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round',
+                    'visibility': 'visible'
+                  },
+                  paint: {
+                    'line-color': '#ff0000',
+                    'line-width': 3,
+                    'line-opacity': 0.7
+                  }
+                });
+              }
+
+              // Update temp-route with current coordinates
+              (mapInstance.getSource('temp-route') as mapboxgl.GeoJSONSource).setData({
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                  type: 'LineString',
+                  coordinates: newCoords
+                }
+              });
+            }
+
+            return newCoords;
+          });
+        } else {
+          // Normal mode - add markers and update route
+          setCoordinates(prev => [...prev, newCoord]);
+          
+          const marker = new mapboxgl.Marker({ color: 'red' })
+            .setLngLat(newCoord)
+            .addTo(mapInstance);
+          
+          markersRef.current.push(marker);
+        }
+      });
     });
 
     return () => {
       console.log('Cleaning up map...');
       // Clean up markers and map on unmount
       markersRef.current.forEach(marker => marker.remove());
-      map.remove();
+      mapInstance.remove();
       mapRef.current = null;
     };
-  }, [coordinates]); // Re-run when coordinates change or component remounts
+  }, [center, editingmode]); // Only re-run when editing mode or center changes
+
+  // Handle coordinate updates separately
+  useEffect(() => {
+    const mapInstance = mapRef.current;
+    if (!mapInstance) return;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Add markers for all coordinates
+    coordinates.forEach(coord => {
+      const marker = new mapboxgl.Marker({ color: 'red' })
+        .setLngLat(coord)
+        .addTo(mapInstance);
+      markersRef.current.push(marker);
+    });
+
+    // Update temporary line layer if in editing mode
+    if (editingmode && mapInstance.getSource('temp-route')) {
+      (mapInstance.getSource('temp-route') as mapboxgl.GeoJSONSource).setData({
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: coordinates
+        }
+      });
+    }
+
+    // Update route if in normal mode and have enough points
+    if (!editingmode && coordinates.length >= 2) {
+      updateRoute(coordinates);
+    }
+  }, [coordinates, editingmode]);
 
   // Load selected route from localStorage
   useEffect(() => {
@@ -298,10 +421,10 @@ export default function RouteMap() {
 
   // Handle route updates separately
   useEffect(() => {
-    if (coordinates.length >= 2) {
+    if (coordinates.length >= 2 && !editingmode) {
       updateRoute(coordinates);
     }
-  }, [coordinates]);
+  }, [coordinates, editingmode]);
 
   const updateRoute = async (points: [number, number][]) => {
     if (points.length < 2 || !mapRef.current) {
@@ -312,13 +435,13 @@ export default function RouteMap() {
       return;
     }
 
-    const map = mapRef.current;
+    const mapInstance = mapRef.current;
 
     // Wait for map to be loaded
-    if (!map.loaded()) {
+    if (!mapInstance.loaded()) {
       await new Promise<void>((resolve) => {
         const checkMap = () => {
-          if (map.loaded()) {
+          if (mapInstance.loaded()) {
             resolve();
           } else {
             setTimeout(checkMap, 100);
@@ -330,10 +453,19 @@ export default function RouteMap() {
 
     try {
       let routeData: RouteData | null = null;
+      let alignedCoordinates: [number, number][] = [];
       
       if (useExactWaypoints) {
         // Create a custom route that follows the exact waypoints
         routeData = await createCustomRoute(points);
+        // Extract coordinates from each feature for aligned path
+        if (routeData) {
+          alignedCoordinates = routeData.features.reduce((acc, feature) => {
+            return [...acc, ...feature.geometry.coordinates];
+          }, [] as [number, number][]);
+        } else {
+          alignedCoordinates = points;
+        }
       } else {
         // Use Mapbox's optimized route (original behavior)
         const coordsString = points.map((coord) => coord.join(',')).join(';');
@@ -364,6 +496,7 @@ export default function RouteMap() {
               waypointCount: points.length
             }
           };
+          alignedCoordinates = data.routes[0].geometry.coordinates;
         }
       }
       
@@ -374,20 +507,20 @@ export default function RouteMap() {
 
       // Wait for style to be loaded
       await new Promise<void>((resolve) => {
-        if (map.isStyleLoaded()) {
+        if (mapInstance.isStyleLoaded()) {
           resolve();
         } else {
-          map.once('styledata', () => resolve());
+          mapInstance.once('styledata', () => resolve());
         }
       });
 
       // Remove old route if exists
       try {
-        if (map.getStyle().layers.find(layer => layer.id === 'route')) {
-          map.removeLayer('route');
+        if (mapInstance.getStyle().layers.find(layer => layer.id === 'route')) {
+          mapInstance.removeLayer('route');
         }
-        if (map.getSource('route')) {
-          map.removeSource('route');
+        if (mapInstance.getSource('route')) {
+          mapInstance.removeSource('route');
         }
       } catch (error) {
         console.error('Error removing old route:', error);
@@ -395,14 +528,14 @@ export default function RouteMap() {
 
       // Add the custom route source and layer
       try {
-        console.log('Adding custom route source...');
-        map.addSource('route', {
+        // Add the route source
+        mapInstance.addSource('route', {
           type: 'geojson',
           data: routeData
         });
 
-        console.log('Adding custom route layer...');
-        map.addLayer({
+        // Add the route layer below temp-route
+        mapInstance.addLayer({
           id: 'route',
           type: 'line',
           source: 'route',
@@ -418,10 +551,78 @@ export default function RouteMap() {
           }
         });
 
-        // Verify layer was added
-        const layerExists = map.getStyle().layers.find(layer => layer.id === 'route');
-        const sourceExists = map.getSource('route');
-        console.log('Layer and source status:', { layerExists, sourceExists });
+        // Clear existing markers
+        markersRef.current.forEach(marker => marker.remove());
+        markersRef.current = [];
+
+        // Add markers at the aligned coordinates
+        if (editingmode) {
+          // In editing mode, add both original markers and path markers
+          // Add original editing points as larger red markers
+          points.forEach(coord => {
+            const marker = new mapboxgl.Marker({ 
+              color: 'red',
+              scale: 1.2 // Make original markers slightly larger
+            })
+              .setLngLat(coord)
+              .addTo(mapInstance);
+            markersRef.current.push(marker);
+          });
+
+          // Add smaller markers along the aligned path
+          alignedCoordinates.forEach((coord, index) => {
+            // Add markers at regular intervals, excluding points very close to original markers
+            if (index > 0 && index < alignedCoordinates.length - 1 && 
+                index % Math.ceil(alignedCoordinates.length / 20) === 0) { // Add more intermediate markers
+              // Check if this point is far enough from any original marker
+              const isFarFromOriginals = points.every(point => {
+                const distance = calculateHaversineDistance(coord, point);
+                return distance > 50; // Minimum 50 meters from original markers
+              });
+
+              if (isFarFromOriginals) {
+                const marker = new mapboxgl.Marker({ 
+                  color: '#3b82f6', // Blue color to match the route
+                  scale: 0.7 // Smaller size for path markers
+                })
+                  .setLngLat(coord)
+                  .addTo(mapInstance);
+                markersRef.current.push(marker);
+              }
+            }
+          });
+
+          // Remove temp-route layer after alignment
+          if (mapInstance.getLayer('temp-route')) {
+            mapInstance.removeLayer('temp-route');
+          }
+          if (mapInstance.getSource('temp-route')) {
+            mapInstance.removeSource('temp-route');
+          }
+
+          // Reset coordinates to start fresh for new markers
+          setCoordinates([]);
+        } else {
+          // In normal mode, add markers along the aligned path
+          alignedCoordinates.forEach((coord, index) => {
+            // Add markers at start, end, and major turning points
+            if (index === 0 || index === alignedCoordinates.length - 1 || 
+                (index % Math.ceil(alignedCoordinates.length / 10) === 0)) { // Add ~10 markers along the path
+              const marker = new mapboxgl.Marker({ color: 'red' })
+                .setLngLat(coord)
+                .addTo(mapInstance);
+              markersRef.current.push(marker);
+            }
+          });
+
+          // Remove temp-route layer in normal mode
+          if (mapInstance.getLayer('temp-route')) {
+            mapInstance.removeLayer('temp-route');
+          }
+          if (mapInstance.getSource('temp-route')) {
+            mapInstance.removeSource('temp-route');
+          }
+        }
 
       } catch (error) {
         console.error('Error adding route source/layer:', error);
@@ -439,9 +640,6 @@ export default function RouteMap() {
       const estimatedCalories = Math.round(MET * weightKg * durationHours);
       setCalories(estimatedCalories);
 
-      const bounds = new mapboxgl.LngLatBounds();
-      points.forEach((pt) => bounds.extend(pt));
-      map.fitBounds(bounds, { padding: 40 });
     } catch (error) {
       console.error('Error updating route:', error);
       toast.error('Failed to update route');
@@ -558,19 +756,24 @@ export default function RouteMap() {
   };
 
   const handleSaveRoute = async () => {
+    if (!session?.user?.id) {
+      toast.error('Please log in to save routes');
+      return;
+    }
+
     const routeData = {
       date: new Date(),
-      time,
-      distance,
-      calories: calories ?? 0,
-      pace,
-      steps,
+      time: time,
+      distance: distance,
+      calories: calories,
+      pace: pace,
+      steps: steps,
       coordinates: coordinates,
       routeName: routeName,
       routeDescription: routeDescription,
-      madeFor: session?.user?.id
-    }
-    console.log('Calories to send:', calories);
+      madeFor: session.user.id
+    };
+
     try {
       console.log('Saving route with coordinates:', coordinates);
       const newRoute = await routeservice.create(routeData);
@@ -591,7 +794,7 @@ export default function RouteMap() {
       console.error('Error saving route:', error);
       toast.error('Error saving route');
     }
-  }
+  };
 
   // Get user's current location
   const getCurrentLocation = () => {
@@ -653,6 +856,224 @@ export default function RouteMap() {
     getCurrentLocation();
   }, []);
 
+  const handleEditingMode = () => {
+    setEditingmode(!editingmode);
+    if (editingmode) {
+      setCoordinates([]);
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+      
+      // Clear route from map
+      const map = mapRef.current;
+      if (map) {
+        if (map.getSource('route')) {
+          map.removeLayer('route');
+          map.removeSource('route');
+        }
+        // Clear temporary line layer
+        if (map.getSource('temp-route')) {
+          (map.getSource('temp-route') as mapboxgl.GeoJSONSource).setData({
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: []
+            }
+          });
+        }
+      }
+    }
+  };
+
+  const handleAlignToRoad = async () => {
+    if (coordinates.length < 2) {
+      toast.error('Add at least two points to align to road');
+      return;
+    }
+
+    try {
+      // Clear existing route from map but keep the markers
+      const mapInstance = mapRef.current;
+      if (mapInstance) {
+        if (mapInstance.getSource('route')) {
+          mapInstance.removeLayer('route');
+          mapInstance.removeSource('route');
+        }
+      }
+
+      // Create a new route aligned to roads
+      const routeData = await createCustomRoute(coordinates);
+      if (!routeData || !mapInstance) return;
+
+      // Add the route source and layer
+      mapInstance.addSource('route', {
+        type: 'geojson',
+        data: routeData
+      });
+
+      mapInstance.addLayer({
+        id: 'route',
+        type: 'line',
+        source: 'route',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+          'visibility': 'visible'
+        },
+        paint: {
+          'line-color': '#3b82f6',
+          'line-width': 8,
+          'line-opacity': 0.8
+        }
+      });
+
+      // Extract all coordinates from the aligned route
+      const alignedCoordinates = routeData.features.reduce((acc, feature) => {
+        return [...acc, ...feature.geometry.coordinates];
+      }, [] as [number, number][]);
+
+      // Keep original markers (they're already on the map)
+      // Add smaller markers along the aligned path
+      alignedCoordinates.forEach((coord, index) => {
+        // Add markers at regular intervals, excluding points very close to original markers
+        if (index > 0 && index < alignedCoordinates.length - 1 && 
+            index % Math.ceil(alignedCoordinates.length / 20) === 0) { // Add ~20 intermediate markers
+          // Check if this point is far enough from any original marker
+          const isFarFromOriginals = coordinates.every(point => {
+            const distance = calculateHaversineDistance(coord, point);
+            return distance > 50; // Minimum 50 meters from original markers
+          });
+
+          if (isFarFromOriginals) {
+            const marker = new mapboxgl.Marker({ 
+              color: '#ff0000', // Red color to match original markers
+              scale: 0.7 // Smaller size for path markers
+            })
+              .setLngLat(coord)
+              .addTo(mapInstance);
+            markersRef.current.push(marker);
+          }
+        }
+      });
+
+      // Remove temp-route layer after alignment
+      if (mapInstance.getLayer('temp-route')) {
+        mapInstance.removeLayer('temp-route');
+      }
+      if (mapInstance.getSource('temp-route')) {
+        mapInstance.removeSource('temp-route');
+      }
+
+      // Update route statistics
+      setSteps(Math.round(routeData.properties.totalDistance / 0.762));
+      setTime(Math.round(routeData.properties.totalDuration / 60));
+      setDistance(Math.round(routeData.properties.totalDistance / 1000));
+      const MET = 3.8;
+      const weightKg = session?.user?.weight ?? 70;
+      const durationHours = Math.round(routeData.properties.totalDuration / 60) / 60;
+      const estimatedCalories = Math.round(MET * weightKg * durationHours);
+      setCalories(estimatedCalories);
+
+      toast.success('Route aligned to roads!');
+    } catch (error) {
+      console.error('Error aligning route to road:', error);
+      toast.error('Failed to align route to roads');
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const query = encodeURIComponent(searchQuery.trim());
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${mapboxgl.accessToken}`
+      );
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        const [lng, lat] = data.features[0].center;
+        const mapInstance = mapRef.current;
+        if (mapInstance) {
+          mapInstance.flyTo({
+            center: [lng, lat],
+            zoom: 13,
+            duration: 2000
+          });
+        }
+        setCenter([lng, lat]);
+        setShowSuggestions(false);
+      } else {
+        toast.error('Location not found');
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast.error('Error searching for location');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    if (value.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const query = encodeURIComponent(value.trim());
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${mapboxgl.accessToken}`
+      );
+      const data = await response.json();
+      
+      if (data.features) {
+        setSuggestions(data.features.map((feature: MapboxFeature) => ({
+          place_name: feature.place_name,
+          center: feature.center
+        })));
+        setShowSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: SearchSuggestion) => {
+    setSearchQuery(suggestion.place_name);
+    const [lng, lat] = suggestion.center;
+    const mapInstance = mapRef.current;
+    if (mapInstance) {
+      mapInstance.flyTo({
+        center: [lng, lat],
+        zoom: 13,
+        duration: 2000
+      });
+    }
+    setCenter([lng, lat]);
+    setShowSuggestions(false);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSuggestions([]);
+    setShowSuggestions(false);
+  };
+
+  // Handle search on Enter key
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearch();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-base-200 p-6">
       <div className="max-w-10xl mx-auto space-y-6">
@@ -663,7 +1084,7 @@ export default function RouteMap() {
             <div className="flex justify-between items-center mb-4">
               <div className="alert alert-info flex-1 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span>Click on the map to add waypoints, or use the AI chat to get route coordinates!</span>
+                <span>{editingmode ? 'Free drawing mode: Click to add markers, then align to road' : 'Click on the map to add waypoints, or use the AI chat to get route coordinates!'}</span>
               </div>
               
               <div className="flex gap-2 items-center">
@@ -730,12 +1151,77 @@ export default function RouteMap() {
 
             <div className="flex gap-6">
               {/* Left side - Map */}
-              <div className="flex-1">
+              <div className="flex-1 relative">
+                {/* Search box overlay */}
+                <div className="absolute top-4 left-4 right-4 z-10 w-1/2 mx-auto">
+                  <form className="flex gap-2 relative" onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
+                    <div className="relative flex-1">
+                      <input 
+                        className="flex h-10 rounded-md border border-input bg-background/90 backdrop-blur-sm px-3 py-2 text-base-300 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full pr-8" 
+                        placeholder="Search for a location..." 
+                        type="text" 
+                        value={searchQuery}
+                        onChange={handleSearchInput}
+                        onKeyPress={handleKeyPress}
+                      />
+                      {searchQuery && (
+                        <button 
+                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground w-10 absolute right-0 top-0 h-full" 
+                          type="button"
+                          onClick={clearSearch}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-4 w-4">
+                            <path d="M18 6 6 18"></path>
+                            <path d="m6 6 12 12"></path>
+                          </svg>
+                        </button>
+                      )}
+                      {showSuggestions && suggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto z-50">
+                          {suggestions.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none text-sm text-gray-700"
+                              onClick={() => handleSuggestionClick(suggestion)}
+                            >
+                              {suggestion.place_name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <button 
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-10 w-10" 
+                      type="button"
+                      onClick={handleSearch}
+                      disabled={isSearching}
+                    >
+                      {isSearching ? (
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-search h-4 w-4">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <path d="m21 21-4.3-4.3"></path>
+                        </svg>
+                      )}
+                    </button>
+                  </form>
+                </div>
                 <div ref={mapContainer} className="h-[700px] w-full rounded-xl overflow-hidden shadow-lg border-4 border-base-300" />
+                {editingmode && coordinates.length >= 2 && (
+                    <button 
+                      className="btn btn-primary z-10 absolute bottom-4 left-4"
+                      onClick={handleAlignToRoad}
+                    >
+                      <BsStars />Align to Road
+                    </button>
+                  )}
               </div>
-
               {/* Right side - Form and Stats */}
-              <div className="w-96 space-y-6">
+              <div className="max-w-96 flex-1 space-y-6">
                 {/* Stats Section */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="stats shadow hover:bg-base-200 transition duration-100">
@@ -768,16 +1254,15 @@ export default function RouteMap() {
                 </div>
 
                 {/* Save Route Form */}
-                <Box sx={{ width: 300 }}>
+                <Box className="ml-10" sx={{ width: 300 }}>
                 <Typography id="input-slider" gutterBottom>
-                    Pace
+                    Pace: {pace} km/h
                   </Typography>
                     <Slider
                       aria-label="Pace"
                       value={pace}
                       onChange={(_, value) => setPace(value as number)}
-                      getAriaValueText={(value) => `${value} km/h`}
-                      valueLabelDisplay="auto"
+                      valueLabelDisplay="off"
                       shiftStep={30}
                       step={0.1}
                       min={1}
@@ -824,6 +1309,14 @@ export default function RouteMap() {
                         Save Route
                       </button>
                     </form>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="form-control">
+                    <label className="label cursor-pointer gap-2">
+                      <span className="label-text">Editing Mode</span>
+                      <IOSSwitch checked={editingmode} onChange={handleEditingMode} />
+                    </label>
                   </div>
                 </div>
               </div>
