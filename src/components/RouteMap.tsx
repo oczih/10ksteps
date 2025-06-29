@@ -335,7 +335,7 @@ export default function RouteMap() {
       setTime(route.time);
       setDistance(route.distance);
       setCalories(route.calories);
-
+      setCenter(route.coordinates[0]);
       // Clear localStorage after loading
       localStorage.removeItem('selectedRoute');
     };
