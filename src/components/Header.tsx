@@ -7,8 +7,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { User } from '@/types';
 import SignIn from './sign-in';
+
 export const Header = ({
-  user: _user,
   setUser,
 }: {
   user: User | null;
@@ -17,7 +17,7 @@ export const Header = ({
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-
+  console.log("User:",session?.user)
   const navLinks = [
     { to: '/', label: 'Dashboard' },
     { to: '/map', label: 'Map' },
@@ -31,24 +31,35 @@ export const Header = ({
     toast.success('Signed out successfully');
   };
 
+  const handleNavClick = (link: { to: string; label: string }) => {
+    if (!session?.user) {
+      toast.error(`You need to be signed in to access ${link.label.toLowerCase()}`);
+      return;
+    }
+    router.push(link.to);
+  };
+
   const renderAuth = () => {
     if (status === 'loading') {
       return <span className="text-white">Loading...</span>;
     }
-    if (session?.user) {
 
-      return (
-        <>
+    return (
+      <>
+        {session?.user ? (
           <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
             <div className="flex items-center gap-2 text-white font-bold">
               <UserCircleIcon className="w-5 h-5" />
               <div>{session.user.username} logged in</div>
             </div>
           </div>
-
-          <div className="flex flex-wrap justify-center md:justify-end gap-3">
-            {navLinks.map(link => (
-              <div key={link.to}>
+        ) : (
+          <SignIn />
+        )}
+        <div className="flex flex-wrap justify-center md:justify-end gap-3">
+          {navLinks.map(link => (
+            <div key={link.to}>
+              {session?.user ? (
                 <Link
                   href={link.to}
                   className={`btn btn-ghost font-bold transition duration-150 hover:bg-sky-500/50 ${
@@ -57,22 +68,27 @@ export const Header = ({
                 >
                   {link.label}
                 </Link>
-              </div>
-            ))}
+              ) : (
+                <button
+                  onClick={() => handleNavClick(link)}
+                  className={`btn btn-ghost font-bold transition duration-150 hover:bg-sky-500/50 ${
+                    pathname === link.to ? 'text-yellow-300' : ''
+                  }`}
+                >
+                  {link.label}
+                </button>
+              )}
+            </div>
+          ))}
 
+          {session?.user && (
             <button onClick={handleSignOut} className="btn btn-outline text-white border-white hover:bg-sky-500/50">
               Sign Out
             </button>
-          </div>
-        </>
-      );
-    }
-
-    return (
-      <>
-        <SignIn />
+          )}
+        </div>
       </>
-    )
+    );
   };
 
   return (

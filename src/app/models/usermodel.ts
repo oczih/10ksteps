@@ -18,6 +18,9 @@ export interface UserDocument {
   goalWeight: number
   googleId: string | null,
   pace: number,
+  image?: string;
+  oauthProvider?: string;
+  oauthId?: string;
 }
 
 
@@ -31,7 +34,10 @@ const userSchema = new Schema<UserDocument>({
   email: {
     type: String,
     unique: true,
-    required: [true, "Email is required"],
+    required: function() {
+      // Email is required only if no OAuth provider is specified (i.e., for credentials login)
+      return !this.oauthProvider;
+    },
     match: [
       /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
       "Email is invalid",
@@ -56,6 +62,9 @@ const userSchema = new Schema<UserDocument>({
     type: String,
     default: null,
   },
+  image: { type: String },
+  oauthProvider: { type: String },
+  oauthId: { type: String },
 }, { timestamps: true });
 
 userSchema.set('toJSON', {

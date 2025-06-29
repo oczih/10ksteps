@@ -1,65 +1,27 @@
 "use client";
-import { FormEvent, useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SignIn from "@/components/sign-in";
 
 export default function Login() {
-  const [error, setError] = useState("");
-  const router = useRouter();
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-
-    const res = await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
-      redirect: false,
-    });
-
-    if (res?.error) {
-      setError(res.error as string);
-    }
-    if (res?.ok) {
-      router.push("/");
-    }
-  };
-
   return (
-    <section className="w-full h-screen flex items-center justify-center">
-      <form
-        onSubmit={handleSubmit}
-        className="p-6 w-full max-w-[400px] flex flex-col justify-between items-center gap-2 
-        border border-solid border-black bg-white rounded text-black"
-      >
-        {error && <div className="text-black">{error}</div>}
-        <h1 className="mb-5 w-full text-2xl font-bold">Sign In</h1>
-        <label className="w-full text-sm">Email</label>
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full h-8 border border-solid border-black rounded p-2"
-          name="email"
-          required
-        />
-        <label className="w-full text-sm">Password</label>
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full h-8 border border-solid border-black rounded p-2"
-          name="password"
-          required
-        />
+    <section className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
+      <div className="bg-slate-800 p-8 rounded-lg shadow-xl border border-slate-700 max-w-md w-full mx-4">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
+          <p className="text-slate-400">Sign in to your account</p>
+        </div>
+        
         <SignIn />
-        <Link
-          href="/register"
-          className="text-sm text-[#888] transition duration-150 ease hover:text-black"
-        >
-          Don't have an account?
-        </Link>
-      </form>
+        
+        <div className="mt-6 text-center">
+          <p className="text-slate-400">
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="text-sky-400 hover:text-sky-300 font-medium">
+              Sign up
+            </Link>
+          </p>
+        </div>
+      </div>
     </section>
   );
 }

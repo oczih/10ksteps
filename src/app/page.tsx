@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/Header";
 import { UserProvider } from "@/app/context/UserContext";
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function Page() {
   return (
@@ -20,6 +21,10 @@ function App() {
   return (
     <div>
       <Header user={user} setUser={setUser} />
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+      />
       {/* You can now use user/setUser anywhere */}
     </div>
   );
