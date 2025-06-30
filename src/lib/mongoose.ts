@@ -1,5 +1,8 @@
 // lib/mongoose.ts
 import mongoose from "mongoose";
+// Import models to ensure they're registered
+import '../app/models/usermodel';
+import '../app/models/walkroutemodel';
 
 const MONGO_URI = process.env.MONGO_URI;
 

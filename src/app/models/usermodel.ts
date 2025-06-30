@@ -1,5 +1,4 @@
-import { WalkRoute } from "@/types";
-import  mongoose, { Schema, model } from  "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 
 export interface UserDocument {
     _id: string;
@@ -7,7 +6,7 @@ export interface UserDocument {
   password: string
   email: string
   name: string
-  walkingroutes: string | WalkRoute[]
+  walkingroutes: string[] | mongoose.Types.ObjectId[]
   weight: number
   height: number
   age: number
@@ -21,6 +20,10 @@ export interface UserDocument {
   image?: string;
   oauthProvider?: string;
   oauthId?: string;
+  hasAccess?: boolean;
+  customerId?: string;
+  priceId?: string;
+  membership?: boolean;
 }
 
 
@@ -65,6 +68,26 @@ const userSchema = new Schema<UserDocument>({
   image: { type: String },
   oauthProvider: { type: String },
   oauthId: { type: String },
+  hasAccess: {
+    type: Boolean,
+    default: false,
+  },
+  customerId: {
+    type: String,
+    validate(value: string) {
+      return value.includes("cus_");
+    },
+  },
+  priceId: {
+    type: String,
+    validate(value: string) {
+      return value.includes("price_");
+    },
+  },
+  membership: {
+    type: Boolean,
+    default: false,
+  },
 }, { timestamps: true });
 
 userSchema.set('toJSON', {

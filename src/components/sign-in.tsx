@@ -33,7 +33,7 @@ export default function SignIn() {
 
   const handleOAuthSignIn = async (provider: string) => {
     try {
-      await signIn(provider, { callbackUrl: '/' });
+      await signIn(provider, { callbackUrl: '/map' });
     } catch (error) {
       toast.error(`Error signing in with ${provider}`);
     }

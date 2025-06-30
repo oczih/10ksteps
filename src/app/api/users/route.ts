@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongoose';
+// Import WalkRoute first to ensure it's registered
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import WalkRoute from '@/app/models/walkroutemodel';
 import WalkUser from '@/app/models/usermodel';
 
 export async function GET() {

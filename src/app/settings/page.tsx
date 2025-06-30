@@ -31,7 +31,7 @@ export default function Settings() {
     const [gender, setGender] = useState<string>('male');
     useEffect(() => {
         const fetchRoutes = async () => {
-            const fetchedRoutes: WalkRoute[] = await routeservice.getUserRoutes();
+            const fetchedRoutes: WalkRoute[] = await routeservice.getUserRoutes(user?._id);
             setRoutes(fetchedRoutes);
         };
         fetchRoutes();

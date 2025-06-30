@@ -6,8 +6,9 @@ import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { User } from '@/types';
-import SignIn from './sign-in';
 import { motion } from 'motion/react';
+import { useUser } from '@/app/context/UserContext';
+
 
 export const Header = ({
   setUser,
@@ -18,12 +19,19 @@ export const Header = ({
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useUser();
   console.log("User:",session?.user)
-  const navLinks = [
-    { to: '/', label: 'Dashboard' },
-    { to: '/map', label: 'Map' },
-    { to: '/settings', label: 'Settings' },
-  ];
+  // Only show Dashboard (/) if not logged in
+  const navLinks = session?.user
+    ? [
+        { to: '/map', label: 'Map' },
+        { to: '/settings', label: 'Settings' },
+      ]
+    : [
+        { to: '/', label: 'Dashboard' },
+        { to: '/map', label: 'Map' },
+        { to: '/settings', label: 'Settings' },
+      ];
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
@@ -91,9 +99,14 @@ export const Header = ({
           ))}
 
           {session?.user && (
-            <button onClick={handleSignOut} className="btn btn-outline text-white border-white hover:bg-sky-500/50">
-              Sign Out
-            </button>
+            <>
+              <button onClick={handleSignOut} className="btn btn-outline text-white border-white hover:bg-sky-500/50">
+                Sign Out
+              </button>
+              {user && !user.hasAccess && (
+                <Link href="/subscribe"><button className="btn btn-outline text-white border-white hover:bg-sky-500/50">Get Premium</button></Link>
+              )}
+            </>
           )}
         </div>
       </>

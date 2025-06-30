@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/mongoose';
 import WalkUser from '@/app/models/usermodel';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import WalkRoute from '@/app/models/walkroutemodel';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
   
     try {
       const user = await WalkUser.findById(id).populate('walkingroutes');
@@ -13,12 +15,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       }
       return NextResponse.json({ user });
     } catch (error) {
+      console.error('Error fetching user:', error);
       return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
     }
   }
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
   
     try {
       const body = await request.json();
@@ -42,13 +45,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   
       return NextResponse.json({ user });
     } catch (error) {
+      console.error('Error updating user:', error);
       return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
     }
   }
 
-  export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectDB();
-    const { id } = params;
+    const { id } = await params;
   
     try {
       const user = await WalkUser.findByIdAndDelete(id);
@@ -57,6 +61,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
       return NextResponse.json({ message: 'User deleted successfully' });
     } catch (error) {
+      console.error('Error deleting user:', error);
       return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
     }
   }

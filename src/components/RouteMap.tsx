@@ -133,8 +133,10 @@ export default function RouteMap() {
   useEffect(() => {
     const fetchRoutes = async () => {
       try {
-        const routes = await routeservice.getUserRoutes();
-        setSavedRoutes(routes);
+        if (session?.user) {
+          const routes = await routeservice.getUserRoutes(session.user);
+          setSavedRoutes(routes);
+        }
       } catch (error) {
         console.error('Error fetching routes:', error);
         toast.error('Failed to load saved routes');
@@ -144,7 +146,7 @@ export default function RouteMap() {
     if (status === 'authenticated') {
       fetchRoutes();
     }
-  }, [status]);
+  }, [status, session]);
 
   // Initialize map only once
   useEffect(() => {

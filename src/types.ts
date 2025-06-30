@@ -1,5 +1,3 @@
-import NextAuth from "next-auth";
-
 export interface WalkRoute {
     id: string;                // because of toJSON transform
     steps: number;
@@ -15,7 +13,7 @@ export interface WalkRoute {
   }
 export type WalkRouteEntry = Omit<WalkRoute, 'id' | 'madeFor'>;
 export type User = {
-    _id: string,
+  _id: string,
   username: string
   password: string
   email: string,
@@ -30,8 +28,9 @@ export type User = {
   goalWeight: number,
   pace: number,
   googleId: string | null
+  membership?: boolean
+  hasAccess?: boolean
 }
-
 
 declare module "next-auth" {
     interface User {
@@ -46,6 +45,8 @@ declare module "next-auth" {
       goal?: string;
       goalWeight?: number;
       googleId?: string;
+      membership?: boolean;
+      hasAccess?: boolean;
     }
   
     interface Session {
