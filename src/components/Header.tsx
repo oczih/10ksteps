@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { User } from '@/types';
 import SignIn from './sign-in';
+import { motion } from 'motion/react';
 
 export const Header = ({
   setUser,
@@ -54,7 +55,15 @@ export const Header = ({
             </div>
           </div>
         ) : (
-          <SignIn />
+          <Link href="/login">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.05 }}
+            className="bg-yellow-400 shadow-lg hover:bg-yellow-500 transition text-gray-900 px-8 py-3 rounded-xl text-lg font-bold mt-4 focus:outline-none focus:ring-4 focus:ring-yellow-300"
+          >
+            Sign in
+          </motion.button>
+        </Link>
         )}
         <div className="flex flex-wrap justify-center md:justify-end gap-3">
           {navLinks.map(link => (

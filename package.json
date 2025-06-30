@@ -28,6 +28,7 @@
     "mapbox-gl": "^3.13.0",
     "mongodb": "^6.17.0",
     "mongoose": "^8.16.0",
+    "motion": "^12.19.2",
     "next": "15.3.4",
     "next-auth": "^5.0.0-beta.29",
     "nodemailer": "^6.10.1",
