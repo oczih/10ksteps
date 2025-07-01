@@ -50,6 +50,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Inject fallback email so it propagates into JWT/session
         user.email = existingUser.email;
+        user.membership = existingUser.membership;
       }
 
       return true;
@@ -60,6 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.username = user.username;
         token.email = user.email;
+        token.membership = user.membership ?? false;
       }
 
       return token;

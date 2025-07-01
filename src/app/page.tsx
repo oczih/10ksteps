@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useRouter } from 'next/navigation';
-
+import { useSession } from "next-auth/react";
 export default function Page() {
   return (
     <UserProvider>
@@ -22,6 +22,7 @@ import { useUser } from "@/app/context/UserContext";
 
 function App() {
   const { user, setUser } = useUser();
+  const { data: session } = useSession();
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -35,15 +36,16 @@ function App() {
   }, []);
 
   // Redirect logged-in users to appropriate page after loading
+  console.log("user:",session?.user)
   useEffect(() => {
-    if (!isLoading && user) {
-      if (user.membership) {
+    if (!isLoading && session?.user) {
+      if (session.user.hasAccess) {
         router.replace('/map');
       } else {
         router.replace('/subscribe');
       }
     }
-  }, [user, isLoading, router]);
+  }, [session, isLoading, router]);
 
   // Show modal only once per login if missing info
   useEffect(() => {

@@ -13,7 +13,7 @@ import Slider from '@mui/material/Slider';
 import userservice from '@/app/services/userservice';
 import Input from '@mui/material/Input';
 import { FaUser, FaDumbbell, FaRoute, FaCog } from 'react-icons/fa';
-
+import { toast, ToastContainer } from 'react-toastify';
 export default function Settings() {
     const router = useRouter();
     const { user, setUser } = useUser();
@@ -29,19 +29,11 @@ export default function Settings() {
     const [height, setHeight] = useState<number>(170);
     const [isLoading, setIsLoading] = useState(true);
     const [gender, setGender] = useState<string>('male');
-    useEffect(() => {
-        const fetchRoutes = async () => {
-            if (user) {
-                const fetchedRoutes: WalkRoute[] = await routeservice.getUserRoutes(user);
-                setRoutes(fetchedRoutes);
-            }
-        };
-        fetchRoutes();
-    }, [user]);
 
     useEffect(() => {
         const fetchUser = async () => { 
             if (session?.user?.id) {
+                console.log("session?.user?.id:",session?.user?.id)
                 try {
                     const fetchedUser = await userservice.get(session.user.id);
                     console.log("Fetched user:", fetchedUser);
@@ -55,6 +47,7 @@ export default function Settings() {
                     setGender(fetchedUser.user.gender || 'male');
                 } catch (error) {
                     console.error('Error fetching user:', error);
+                    toast.error('Error fetching user');
                 } finally {
                     setIsLoading(false);
                 }
@@ -62,6 +55,15 @@ export default function Settings() {
         }
         fetchUser();
     }, [session?.user?.id]);
+    useEffect(() => {
+        const fetchRoutes = async () => {
+            if (user) {
+                const fetchedRoutes: WalkRoute[] = await routeservice.getUserRoutes(user);
+                setRoutes(fetchedRoutes);
+            }
+        };
+        fetchRoutes();
+    }, [user]);
     const stridelength =Math.round(height*(gender === 'male' ? 0.415 : 0.413));
     const handleViewRoute = (route: WalkRoute) => {
         localStorage.setItem('selectedRoute', JSON.stringify(route));
@@ -82,8 +84,18 @@ export default function Settings() {
             await userservice.update(session?.user?.id ?? '', {weight: value as number});
         } catch (error) {
             console.error('Error updating weight:', error);
+            
         }
     };
+    const handleActivityLevelChange = async(event: React.ChangeEvent<HTMLSelectElement>) => {
+        setActivityLevel(event.target.value);
+        try {
+            await userservice.update(session?.user?.id ?? '', {activityLevel: event.target.value});
+        } catch (error) {
+            console.error('Error updating activity level:', error);
+        }
+    }
+
 
     const handleHeightChange = async(event: Event, value: number | number[]) => {
         setHeight(value as number);
@@ -167,9 +179,10 @@ export default function Settings() {
             </div>
         );
     }
-    console.log("name:",name)
+    console.log("email:",email)
     return (
         <div className="min-h-screen bg-base-200">
+            <ToastContainer />
             <Header user={user} setUser={setUser} />
             
             <div className="container mx-auto px-4 py-8">
@@ -212,9 +225,18 @@ export default function Settings() {
                                     <div className="text-sm text-base-content/70 mb-1">
                                         Activity Level
                                     </div>
-                                    <div className="text-lg font-semibold text-base-content">
-                                        {activityLevel || 'Not set'}
-                                    </div>
+                                    <select 
+                                        className="select select-bordered w-full bg-base-100 text-base-content"
+                                        value={activityLevel}
+                                        onChange={handleActivityLevelChange}
+                                    >
+                                        <option value="sedentary">Sedentary</option>
+                                        <option value="lightly">Lightly Active</option>
+                                        <option value="moderately">Moderately Active</option>
+                                        <option value="very">Very Active</option>
+                                        <option value="extra">Extra Active</option>
+                                       
+                                    </select>
                                 </div>
                                 <div className='bg-base-200 p-4 rounded-lg'>
                                     <div className='text-sm text-base-content/70 mb-1'>

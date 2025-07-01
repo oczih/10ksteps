@@ -4,7 +4,7 @@ import { useSession, signIn } from 'next-auth/react';
 
 // Customer portal link
 const customerPortalLink =
-    'https://billing.stripe.com/p/login/test_dR68yq9NZaay7sI144';
+    'https://billing.stripe.com/p/login/test_8x228t0oA1Aebt42d4aZi00';
 
 const ButtonCustomerPortal = () => {
     const { data: session, status } = useSession();
