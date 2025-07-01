@@ -7,8 +7,13 @@ import WalkRoute from '@/app/models/walkroutemodel';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectDB();
     const { id } = await params;
+    if (!id || id === "undefined") {
+        return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+    console.log("ID:", id);
   
     try {
+      console.log("Fetching user:", id);
       const user = await WalkUser.findById(id).populate('walkingroutes');
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });

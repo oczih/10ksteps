@@ -2,7 +2,7 @@ import axios from 'axios';
 import { WalkRouteEntry, WalkRoute } from '@/types';
 
 const API_URL = 'http://localhost:3000/api/walkingroutes';
-
+const API_URL_USER = 'http://localhost:3000/api/users';
 const create = async (routeData: WalkRouteEntry): Promise<WalkRoute> => {
   try {
     const response = await axios.post(API_URL, routeData);
@@ -15,10 +15,13 @@ const create = async (routeData: WalkRouteEntry): Promise<WalkRoute> => {
 
 const getUserRoutes = async (user: { _id?: string; id?: string }): Promise<WalkRoute[]> => {
   try {
-    // Handle both session user (with id) and full user object (with _id)
     const userId = user?._id || user?.id;
-    const response = await axios.get(`${API_URL}/${userId}`);
-    return response.data.walkingroutes;
+    if (!userId) {
+      throw new Error("User ID is required to fetch routes.");
+    }
+    const response = await axios.get(`${API_URL_USER}/${userId}`);
+    console.log("Response:", response.data);
+    return response.data.user.walkingroutes;
   } catch (error) {
     console.error('Error fetching routes:', error);
     throw error;

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/mongoose';
 import WalkRoute from '@/app/models/walkroutemodel';
+import WalkUser from '@/app/models/usermodel';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectDB();
     const { id } = await params;
   
     try {
-      const user = await WalkRoute.findById(id);
+      const user = await WalkRoute.findById(id).populate('user');
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
@@ -60,5 +61,19 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }catch(error){
         console.error('Error deleting walking route:', error);
         return NextResponse.json({ error: 'Failed to delete route' }, { status: 500 });
+    }
+}
+
+export async function GETWalkingRoutes(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    await connectDB();
+    const { id } = await params;
+    try {
+        const user = await WalkUser.findById(id).populate('walkingroutes');
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+        return NextResponse.json(user.walkingroutes);
+    } catch (error) {
+        return NextResponse.json({ error: 'Failed to fetch walking routes' }, { status: 500 });
     }
 }

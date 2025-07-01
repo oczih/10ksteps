@@ -8,7 +8,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { User } from '@/types';
 import { motion } from 'motion/react';
 import { useUser } from '@/app/context/UserContext';
-
+import { FaCheckSquare } from "react-icons/fa";
 
 export const Header = ({
   setUser,
@@ -72,6 +72,13 @@ export const Header = ({
             Sign in
           </motion.button>
         </Link>
+        )}
+        {session?.user && session?.user.hasAccess && (
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
+            <div className="flex items-center gap-2 text-white font-bold">
+              <div className="flex items-center gap-2 text-green-500">Membership</div><FaCheckSquare className="w-5 h-5 text-green-500" />
+            </div>
+          </div>
         )}
         <div className="flex flex-wrap justify-center md:justify-end gap-3">
           {navLinks.map(link => (
