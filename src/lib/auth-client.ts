@@ -33,7 +33,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       if (account?.provider === "twitter") {
         const twitterId = account.providerAccountId;
-        const fallbackEmail = `twitter_${twitterId}@example.com`;
+        const fallbackEmail = ``
 
         let existingUser = await WalkUser.findOne({ oauthId: twitterId });
 
@@ -102,7 +102,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async redirect({ url, baseUrl }) {
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       if (new URL(url).origin === baseUrl) return url;
-      return `${baseUrl}/map`;
+      return `${baseUrl}/subscribe`;
     },
   },
 });

@@ -13,6 +13,7 @@ const get = async (id: string): Promise<{ user: User }> => {
 }
 const update = async (id: string, newData: Partial<User>): Promise<{ user: User }> => {
     try {
+        console.log('Updating user:', id, newData);
         const response = await axios.put(`${API_URL}/${id}`, newData);
         return response.data;
 

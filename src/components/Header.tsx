@@ -20,7 +20,6 @@ export const Header = ({
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useUser();
-  console.log("User:",session?.user)
   // Only show Dashboard (/) if not logged in
   const navLinks = session?.user
     ? [

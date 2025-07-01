@@ -13,7 +13,7 @@ export interface WalkRoute {
   }
 export type WalkRouteEntry = Omit<WalkRoute, 'id' | 'madeFor'>;
 export type User = {
-  _id: string,
+  id: string,
   username: string
   password: string
   email: string,
@@ -47,6 +47,7 @@ declare module "next-auth" {
       googleId?: string;
       membership?: boolean;
       hasAccess?: boolean;
+      email?: string;
     }
   
     interface Session {

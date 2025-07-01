@@ -31,11 +31,13 @@ export default function Settings() {
     const [gender, setGender] = useState<string>('male');
     useEffect(() => {
         const fetchRoutes = async () => {
-            const fetchedRoutes: WalkRoute[] = await routeservice.getUserRoutes(session?.user?._id);
-            setRoutes(fetchedRoutes);
+            if (user) {
+                const fetchedRoutes: WalkRoute[] = await routeservice.getUserRoutes(user);
+                setRoutes(fetchedRoutes);
+            }
         };
         fetchRoutes();
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         const fetchUser = async () => { 

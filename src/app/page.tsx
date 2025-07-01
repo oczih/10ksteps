@@ -26,7 +26,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Wait for user context to be initialized
   useEffect(() => {
     // Small delay to ensure user context is loaded
     const timer = setTimeout(() => {
@@ -38,7 +37,7 @@ function App() {
   // Redirect logged-in users to appropriate page after loading
   useEffect(() => {
     if (!isLoading && user) {
-      if (user.membership || user.hasAccess) {
+      if (user.membership) {
         router.replace('/map');
       } else {
         router.replace('/subscribe');
@@ -63,11 +62,16 @@ function App() {
     }
   }, [user]);
 
-  // Show loading or don't render dashboard content if user is logged in
-  if (isLoading || user) {
+  // Prevent rendering anything for logged-in users
+  if (user) {
+    return null; // or a loading spinner if you prefer
+  }
+
+  // Show loading spinner while loading
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#181f2a] via-[#232b39] to-[#10141a]">
-        {isLoading && <div className="text-white text-xl">Loading...</div>}
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }

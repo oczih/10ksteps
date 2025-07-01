@@ -11,6 +11,9 @@ import {
   extractCoordinatesAsLatLng,
   testCoordinateParsing
 } from '@/lib/coordinate-parser';
+import { useRoute } from "@/app/context/RouteContext";
+import { sendPrompt } from "@/app/services/aiservice";
+import { parseCoordinates } from "@/app/lib/coordinate-parser";
 
 export default function CoordinateDemo() {
   const [inputText, setInputText] = useState('');
@@ -23,6 +26,8 @@ export default function CoordinateDemo() {
     lngLat: any;
     latLng: any;
   } | null>(null);
+
+  const { addCoordinatesFromGemini } = useRoute();
 
   const testTexts = [
     "Here's a walking route in Helsinki: [60.1699, 24.9384], [60.1732, 24.9415], [60.1755, 24.9452]",
@@ -63,6 +68,13 @@ export default function CoordinateDemo() {
     console.log('Running coordinate parsing tests...');
     testCoordinateParsing();
     alert('Tests completed! Check the browser console for results.');
+  };
+
+  const handleGeminiResponse = async (prompt, messages) => {
+    const geminiText = await sendPrompt(prompt, messages);
+
+    const coordinates = parseCoordinates(geminiText);
+    addCoordinatesFromGemini(coordinates);
   };
 
   return (

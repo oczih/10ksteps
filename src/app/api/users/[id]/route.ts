@@ -27,7 +27,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectDB();
     const { id } = await params;
-  
+    console.log("Updating user:", id);
+    console.log("Body:", request.body);
     try {
       const body = await request.json();
       const {

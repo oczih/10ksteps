@@ -2,18 +2,25 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Header } from '@/components/Header';
 import { useUser } from '@/app/context/UserContext';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { BsStars, BsMap, BsSpeedometer2, BsGraphUp, BsHeart, BsGeoAlt } from 'react-icons/bs';
+import Input from '@mui/material/Input';
+import userservice from '@/app/services/userservice';
+import WalkUser from '@/app/models/usermodel'; // adjust path as needed
 
 export default function SubscribePage() {
-    const { data: session, status } = useSession();
+    const { data: session, status, update } = useSession();
     const { user } = useUser();
     const router = useRouter();
-
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [emailInput, setEmailInput] = useState('');
+    const [emailError, setEmailError] = useState('');
+    const [saving, setSaving] = useState(false);
+    console.log(session?.user);
     useEffect(() => {
         // If not logged in, redirect to home
         if (status === 'unauthenticated') {
@@ -23,7 +30,35 @@ export default function SubscribePage() {
         if (session?.user?.membership || session?.user?.hasAccess) {
             router.replace('/map');
         }
-    }, [status, session, router]);
+        // Show email modal if user is logged in but has no email
+        if (user && (!user.email || user.email.trim() === '')) {
+            setShowEmailModal(true);
+        }
+    }, [status, session, router, user]);
+
+    const handleSaveEmail = async () => {
+        if (!emailInput || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailInput)) {
+            setEmailError('Please enter a valid email address.');
+            return;
+        }
+        setSaving(true);
+        try {
+            // Ensure user has a valid _id before updating, and safely update user context
+            if (user && typeof user.id === 'string' && user.id.trim() !== '') {
+                await userservice.update(user.id, { email: emailInput });
+                user.email = emailInput;
+                if (typeof update === 'function') {
+                    await update();
+                }
+            }
+            setShowEmailModal(false);
+            setEmailError('');
+        } catch {
+            setEmailError('Failed to save email. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
 
     // Show loading while checking auth status
     if (status === 'loading' || !session) {
@@ -71,6 +106,32 @@ export default function SubscribePage() {
         <div className="min-h-screen bg-gradient-to-br from-[#181f2a] via-[#232b39] to-[#10141a]">
             <Header user={user} setUser={() => {}} />
             
+            {/* Email Modal */}
+            {showEmailModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+                    <div className="bg-white rounded-lg shadow-xl p-8 max-w-sm w-full flex flex-col items-center gap-4">
+                        <h2 className="text-xl font-bold text-blue-600 text-center">Set Your Email</h2>
+                        <p className="text-gray-700 text-center">To continue, please provide your email address.</p>
+                        <Input
+                            type="email"
+                            value={emailInput}
+                            onChange={e => setEmailInput(e.target.value)}
+                            placeholder="Enter your email"
+                            className="w-full"
+                            disabled={saving}
+                        />
+                        {emailError && <p className="text-red-500 text-sm">{emailError}</p>}
+                        <button
+                            onClick={handleSaveEmail}
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-bold mt-2 w-full"
+                            disabled={saving}
+                        >
+                            {saving ? 'Saving...' : 'Save Email'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <main className="pt-20 px-4">
                 {/* Hero Section */}
                 <section className="max-w-6xl mx-auto text-center mb-16">

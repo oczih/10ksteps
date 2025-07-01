@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react';
 import { sendPrompt } from '@/app/services/aiservice';
 import { scanForCoordinates, Coordinate } from '@/lib/coordinate-parser';
 import { useRoute } from '@/app/context/RouteContext';
-import ReactMarkdown from 'react-markdown';
 
 interface Message {
   text: string;
@@ -140,7 +139,7 @@ export default function GeminiChat() {
                     <p className="whitespace-pre-wrap">{message.text}</p>
                   ) : (
                     <div className="prose prose-sm max-w-none dark:prose-invert">
-                      <ReactMarkdown>{message.text}</ReactMarkdown>
+                      {/* Only show coordinates if found, do not show AI's descriptive text */}
                       {message.coordinates && message.coordinates.length > 0 && (
                         <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-sm">
                           <p className="font-semibold text-green-800">📍 Found {message.coordinates.length} coordinate(s):</p>

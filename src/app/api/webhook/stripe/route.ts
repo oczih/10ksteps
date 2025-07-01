@@ -47,7 +47,7 @@ export async function POST(req) {
 
                 if (customer.email) {
                     user = await WalkUser.findOne({ email: customer.email });
-
+                    
                     if (!user) {
                         user = await WalkUser.create({
                             email: customer.email,
