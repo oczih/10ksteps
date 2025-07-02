@@ -3,12 +3,13 @@ import { connectDB } from '../../../../lib/mongoose';
 import WalkUser from '@/app/models/usermodel';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import WalkRoute from '@/app/models/walkroutemodel';
+import mongoose from 'mongoose';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectDB();
     const { id } = await params;
-    if (!id || id === "undefined") {
-        return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    if (!id || id === "undefined" || !mongoose.Types.ObjectId.isValid(id)) {
+        return NextResponse.json({ error: 'Valid MongoDB ObjectId is required' }, { status: 400 });
     }
     console.log("ID:", id);
   

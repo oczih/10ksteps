@@ -17,7 +17,7 @@ import { toast, ToastContainer } from 'react-toastify';
 export default function Settings() {
     const router = useRouter();
     const { user, setUser } = useUser();
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -32,6 +32,9 @@ export default function Settings() {
     const [username, setUsername] = useState<string>('');
     const [userLastPasswordChange, setUserLastPasswordChange] = useState<Date>(new Date());
     const [isPasswordChangeBlocked, setIsPasswordChangeBlocked] = useState(false);
+    console.log("session:", session)
+    console.log("user:", session?.user)
+    console.log("status:", status)
     useEffect(() => {
         const fetchUser = async () => { 
             if (session?.user?.id) {
@@ -77,6 +80,16 @@ export default function Settings() {
         };
         fetchRoutes();
     }, [user]);
+    useEffect(() => {
+        if (session && !session.user) {
+            setIsLoading(false);
+        }
+    }, [session]);
+    useEffect(() => {
+        if (session?.accessToken) {
+            userservice.setToken(session.accessToken);
+        }
+    }, [session]);
     const stridelength =Math.round(height*(gender === 'male' ? 0.415 : 0.413));
     const handleViewRoute = (route: WalkRoute) => {
         localStorage.setItem('selectedRoute', JSON.stringify(route));
@@ -190,6 +203,16 @@ export default function Settings() {
             console.error('Error updating name:', error);
             toast.error('Error updating username');
     }
+    }
+    if (!session?.user && !isLoading) {
+        return (
+            <div className="min-h-screen bg-base-200 flex items-center justify-center">
+                <Header user={user} setUser={setUser} />
+                <div>
+                    <p className="text-lg text-center">You must be logged in to view settings.</p>
+                </div>
+            </div>
+        );
     }
     if (isLoading) {
         return (

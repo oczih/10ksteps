@@ -13,7 +13,7 @@ type Props = {
 const SessionSync = ({ children }: { children: React.ReactNode }) => {
   const { data: session } = useSession();
   const { setUser } = useUser();
-
+  console.log("session:", session?.user)
   useEffect(() => {
     const fetchFullUser = async () => {
       if (session?.user?.id) {
@@ -25,7 +25,7 @@ const SessionSync = ({ children }: { children: React.ReactNode }) => {
           } else {
             // Fallback to session data if API call fails
             const user: User = {
-              _id: session.user.id || '',
+              id: session.user.id || '',
               username: session.user.username || '',
               email: session.user.email || '',
               name: session.user.name || '',
