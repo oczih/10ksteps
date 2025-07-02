@@ -30,10 +30,10 @@ export async function POST(req) {
     eventType = event.type;
 
     try {
+        console.log('Stripe webhook event received:', eventType);
         switch (eventType) {
             case 'checkout.session.completed': {
-                // First payment is successful and a subscription is created (if mode was set to "subscription" in ButtonCheckout)
-                // ✅ Grant access to the product
+                console.log('Processing checkout.session.completed event');
                 let user;
                 const session = await stripe.checkout.sessions.retrieve(
                     data.object.id,
@@ -41,31 +41,36 @@ export async function POST(req) {
                         expand: ['line_items']
                     }
                 );
+                console.log('Stripe session:', JSON.stringify(session, null, 2));
                 const customerId = session?.customer;
                 const customer = await stripe.customers.retrieve(customerId);
+                console.log('Stripe customer:', JSON.stringify(customer, null, 2));
                 const priceId = session?.line_items?.data[0]?.price.id;
+                console.log('Price ID:', priceId);
 
                 if (customer.email) {
                     user = await WalkUser.findOne({ email: customer.email });
-                    
+                    console.log('User found by email:', user);
                     if (!user) {
                         user = await WalkUser.create({
                             email: customer.email,
                             name: customer.name,
                             customerId
                         });
-
+                        console.log('User created:', user);
                         await user.save();
                     }
                 } else {
-                    console.error('No user found');
+                    console.error('No email found on Stripe customer');
                     throw new Error('No user found');
                 }
 
                 // Update user data + Grant user access to your product. It's a boolean in the database, but could be a number of credits, etc...
                 user.priceId = priceId;
                 user.hasAccess = true;
+                console.log('Updating user access and priceId:', user);
                 await user.save();
+                console.log('User saved with access granted:', user);
 
                 // Extra: >>>>> send email to dashboard <<<<
 
@@ -73,18 +78,25 @@ export async function POST(req) {
             }
 
             case 'customer.subscription.deleted': {
-                // ❌ Revoke access to the product
-                // The customer might have changed the plan (higher or lower plan, cancel soon etc...)
+                console.log('Processing customer.subscription.deleted event');
                 const subscription = await stripe.subscriptions.retrieve(
                     data.object.id
                 );
+                console.log('Stripe subscription:', JSON.stringify(subscription, null, 2));
                 const user = await WalkUser.findOne({
                     customerId: subscription.customer
                 });
+                console.log('User found by customerId:', user);
 
                 // Revoke access to your product
-                user.hasAccess = false;
-                await user.save();
+                if (user) {
+                    user.hasAccess = false;
+                    console.log('Revoking user access:', user);
+                    await user.save();
+                    console.log('User saved with access revoked:', user);
+                } else {
+                    console.error('No user found for subscription.customer:', subscription.customer);
+                }
 
                 break;
             }

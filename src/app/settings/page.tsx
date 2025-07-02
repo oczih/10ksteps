@@ -29,7 +29,9 @@ export default function Settings() {
     const [height, setHeight] = useState<number>(170);
     const [isLoading, setIsLoading] = useState(true);
     const [gender, setGender] = useState<string>('male');
-
+    const [username, setUsername] = useState<string>('');
+    const [userLastPasswordChange, setUserLastPasswordChange] = useState<Date>(new Date());
+    const [isPasswordChangeBlocked, setIsPasswordChangeBlocked] = useState(false);
     useEffect(() => {
         const fetchUser = async () => { 
             if (session?.user?.id) {
@@ -55,6 +57,17 @@ export default function Settings() {
         }
         fetchUser();
     }, [session?.user?.id]);
+    useEffect(() => {
+        const fetchUserLastPasswordChange = async () => {
+            setUserLastPasswordChange(session?.user?.lastPasswordChange ?? new Date());
+            const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000; // ms
+            const now = Date.now();
+            if (session?.user?.lastPasswordChange && now - session?.user?.lastPasswordChange.getTime() < SEVEN_DAYS) {
+                setIsPasswordChangeBlocked(true);
+            }
+        }
+        fetchUserLastPasswordChange();
+    }, [session?.user?.id, session?.user?.lastPasswordChange]);
     useEffect(() => {
         const fetchRoutes = async () => {
             if (user) {
@@ -168,7 +181,16 @@ export default function Settings() {
             setAge(120);
         }
     };
-
+    const handleUserNameChange = async(event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        try {
+            await userservice.update(session?.user?.id ?? '', {username: username, lastPasswordChange: new Date()});
+            toast.success('Username updated successfully');
+        } catch (error) {
+            console.error('Error updating name:', error);
+            toast.error('Error updating username');
+    }
+    }
     if (isLoading) {
         return (
             <div className="min-h-screen bg-base-200">
@@ -179,7 +201,20 @@ export default function Settings() {
             </div>
         );
     }
-    console.log("email:",email)
+    const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000; // ms
+    const now = Date.now();
+    if (now - userLastPasswordChange.getTime() < SEVEN_DAYS) {
+        // Block password change
+        return (
+            <div className="min-h-screen bg-base-200">
+                <Header user={user} setUser={setUser} />
+                <div className="flex items-center justify-center min-h-screen">
+                    <div className="loading loading-spinner loading-lg"></div>
+                </div>
+            </div>
+        );
+    }
+    
     return (
         <div className="min-h-screen bg-base-200">
             <ToastContainer />
@@ -211,7 +246,16 @@ export default function Settings() {
                                         {name}
                                     </div>
                                 </div>
-                                
+                                <div className="bg-base-200 p-4 rounded-lg">
+                                    <div className="text-sm text-base-content/70 mb-1">
+                                        Username
+                                    </div>
+                                    <form onSubmit={handleUserNameChange} className='flex items-center gap-2'>
+                                        <input disabled={isPasswordChangeBlocked} type="text" value={username} onChange={(e) => setUsername(e.target.value)} className='input input-bordered w-full bg-base-100 text-base-content' />
+                                        <button disabled={isPasswordChangeBlocked} type="submit" className='btn btn-primary'>Save</button>
+                                    </form>
+                                </div>
+
                                 <div className="bg-base-200 p-4 rounded-lg">
                                     <div className="text-sm text-base-content/70 mb-1">
                                         Email

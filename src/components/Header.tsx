@@ -9,7 +9,8 @@ import { User } from '@/types';
 import { motion } from 'motion/react';
 import { useUser } from '@/app/context/UserContext';
 import { FaCheckSquare } from "react-icons/fa";
-
+import { useEffect } from 'react';
+import userservice from '@/app/services/userservice';
 export const Header = ({
   setUser,
 }: {
@@ -31,7 +32,13 @@ export const Header = ({
         { to: '/map', label: 'Map' },
         { to: '/settings', label: 'Settings' },
       ];
-
+  useEffect(() => {
+    const fetchUser = async () => {
+      const user = await userservice.get(session?.user?.id ?? '');
+      setUser(user.user);
+    }
+    fetchUser();
+  }, [session?.user?.id, setUser]);
   const handleSignOut = async () => {
     await signOut({ redirect: false });
     setUser(null);
@@ -58,7 +65,7 @@ export const Header = ({
           <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
             <div className="flex items-center gap-2 text-white font-bold">
               <UserCircleIcon className="w-5 h-5" />
-              <div>{session.user.username} logged in</div>
+              <div>{user?.username} logged in</div>
             </div>
           </div>
         ) : (

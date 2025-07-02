@@ -30,6 +30,7 @@ export type User = {
   googleId: string | null
   membership?: boolean
   hasAccess?: boolean
+  lastPasswordChange: Date
 }
 
 declare module "next-auth" {
@@ -48,6 +49,7 @@ declare module "next-auth" {
       membership?: boolean;
       hasAccess?: boolean;
       email?: string;
+      lastPasswordChange?: Date;
     }
   
     interface Session {
