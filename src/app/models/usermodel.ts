@@ -24,6 +24,7 @@ export interface UserDocument {
   customerId?: string;
   priceId?: string;
   membership?: boolean;
+  lastPasswordChange?: Date;
 }
 
 
@@ -87,6 +88,10 @@ const userSchema = new Schema<UserDocument>({
   membership: {
     type: Boolean,
     default: false,
+  },
+  lastPasswordChange: {
+    type: Date,
+    default: () => new Date(),
   },
 }, { timestamps: true });
 

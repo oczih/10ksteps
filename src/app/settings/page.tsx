@@ -30,8 +30,8 @@ export default function Settings() {
     const [isLoading, setIsLoading] = useState(true);
     const [gender, setGender] = useState<string>('male');
     const [username, setUsername] = useState<string>('');
-    const [userLastPasswordChange, setUserLastPasswordChange] = useState<Date>(new Date());
     const [isPasswordChangeBlocked, setIsPasswordChangeBlocked] = useState(false);
+    console.log("isPasswordChangeBlocked:", isPasswordChangeBlocked)
     console.log("session:", session)
     console.log("user:", session?.user)
     console.log("status:", status)
@@ -60,16 +60,19 @@ export default function Settings() {
         }
         fetchUser();
     }, [session?.user?.id]);
+    console.log("session?.user?.lastPasswordChange:", session?.user)
     useEffect(() => {
-        const fetchUserLastPasswordChange = async () => {
-            setUserLastPasswordChange(session?.user?.lastPasswordChange ?? new Date());
-            const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000; // ms
-            const now = Date.now();
-            if (session?.user?.lastPasswordChange && now - session?.user?.lastPasswordChange.getTime() < SEVEN_DAYS) {
-                setIsPasswordChangeBlocked(true);
-            }
+        let lastChange = session?.user?.lastPasswordChange;
+        if (lastChange && typeof lastChange === 'string') {
+            lastChange = new Date(lastChange);
         }
-        fetchUserLastPasswordChange();
+        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000; // ms
+        const now = Date.now();
+        if (lastChange && now - new Date(lastChange).getTime() < SEVEN_DAYS) {
+            setIsPasswordChangeBlocked(true);
+        } else {
+            setIsPasswordChangeBlocked(false);
+        }
     }, [session?.user?.id, session?.user?.lastPasswordChange]);
     useEffect(() => {
         const fetchRoutes = async () => {
@@ -80,16 +83,8 @@ export default function Settings() {
         };
         fetchRoutes();
     }, [user]);
-    useEffect(() => {
-        if (session && !session.user) {
-            setIsLoading(false);
-        }
-    }, [session]);
-    useEffect(() => {
-        if (session?.accessToken) {
-            userservice.setToken(session.accessToken);
-        }
-    }, [session]);
+
+
     const stridelength =Math.round(height*(gender === 'male' ? 0.415 : 0.413));
     const handleViewRoute = (route: WalkRoute) => {
         localStorage.setItem('selectedRoute', JSON.stringify(route));
@@ -196,13 +191,17 @@ export default function Settings() {
     };
     const handleUserNameChange = async(event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        if (isPasswordChangeBlocked) {
+            toast.error('You can only change your username or password once every 7 days.');
+            return;
+        }
         try {
             await userservice.update(session?.user?.id ?? '', {username: username, lastPasswordChange: new Date()});
             toast.success('Username updated successfully');
         } catch (error) {
-            console.error('Error updating name:', error);
+            console.error('Error updating username:', error);
             toast.error('Error updating username');
-    }
+        }
     }
     if (!session?.user && !isLoading) {
         return (
@@ -224,19 +223,7 @@ export default function Settings() {
             </div>
         );
     }
-    const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000; // ms
-    const now = Date.now();
-    if (now - userLastPasswordChange.getTime() < SEVEN_DAYS) {
-        // Block password change
-        return (
-            <div className="min-h-screen bg-base-200">
-                <Header user={user} setUser={setUser} />
-                <div className="flex items-center justify-center min-h-screen">
-                    <div className="loading loading-spinner loading-lg"></div>
-                </div>
-            </div>
-        );
-    }
+
     
     return (
         <div className="min-h-screen bg-base-200">
@@ -269,16 +256,29 @@ export default function Settings() {
                                         {name}
                                     </div>
                                 </div>
-                                <div className="bg-base-200 p-4 rounded-lg">
-                                    <div className="text-sm text-base-content/70 mb-1">
-                                        Username
-                                    </div>
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium mb-1">Username</label>
+                                    {isPasswordChangeBlocked && (
+                                        <div className="text-red-500 text-sm mb-1">
+                                            You can only change your username or password once every 7 days.
+                                        </div>
+                                    )}
                                     <form onSubmit={handleUserNameChange} className='flex items-center gap-2'>
-                                        <input disabled={isPasswordChangeBlocked} type="text" value={username} onChange={(e) => setUsername(e.target.value)} className='input input-bordered w-full bg-base-100 text-base-content' />
-                                        <button disabled={isPasswordChangeBlocked} type="submit" className='btn btn-primary'>Save</button>
+                                        <input
+                                            disabled={isPasswordChangeBlocked}
+                                            type="text"
+                                            value={username}
+                                            onChange={(e) => setUsername(e.target.value)}
+                                            className='input input-bordered w-full bg-base-100 text-base-content'
+                                        />
+                                        <button
+                                            type="submit"
+                                            className='btn btn-primary'
+                                        >
+                                            Save
+                                        </button>
                                     </form>
                                 </div>
-
                                 <div className="bg-base-200 p-4 rounded-lg">
                                     <div className="text-sm text-base-content/70 mb-1">
                                         Email

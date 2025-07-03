@@ -25,11 +25,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
     }
   }
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+
+  
+  export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectDB();
     const { id } = await params;
-    console.log("Updating user:", id);
-    console.log("Body:", request.body);
+  
     try {
       const body = await request.json();
       const {
@@ -37,18 +38,42 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         weight, height, age, gender, activityLevel, goal, goalWeight
       } = body;
   
-      const user = await WalkUser.findByIdAndUpdate(
-        id,
-        {
-          name, username, password, email, walkingroutes,
-          weight, height, age, gender, activityLevel, goal, goalWeight
-        },
-        { new: true }
-      );
-  
+      const user = await WalkUser.findById(id);
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
+  
+      // Check if trying to change the username
+      if (username && username !== user.username) {
+        const lastChange = user.lastPasswordChange || new Date(0);
+        const now = new Date();
+        const diffMs = now.getTime() - lastChange.getTime();
+        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  
+        if (diffMs < SEVEN_DAYS) {
+          return NextResponse.json({
+            error: 'Username can only be changed once every 7 days.',
+          }, { status: 403 });
+        }
+  
+        user.username = username;
+        user.lastPasswordChange = now;
+      }
+  
+      // Update the rest of the fields
+      if (name !== undefined) user.name = name;
+      if (password !== undefined) user.password = password;
+      if (email !== undefined) user.email = email;
+      if (walkingroutes !== undefined) user.walkingroutes = walkingroutes;
+      if (weight !== undefined) user.weight = weight;
+      if (height !== undefined) user.height = height;
+      if (age !== undefined) user.age = age;
+      if (gender !== undefined) user.gender = gender;
+      if (activityLevel !== undefined) user.activityLevel = activityLevel;
+      if (goal !== undefined) user.goal = goal;
+      if (goalWeight !== undefined) user.goalWeight = goalWeight;
+  
+      await user.save();
   
       return NextResponse.json({ user });
     } catch (error) {
@@ -56,6 +81,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
     }
   }
+  
 
   export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectDB();

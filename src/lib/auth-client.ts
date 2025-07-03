@@ -96,6 +96,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.pace = user.pace;
         session.user.membership = user.membership;
         session.user.hasAccess = user.hasAccess;
+        session.user.lastPasswordChange = user.lastPasswordChange;
       }
 
       return session;
