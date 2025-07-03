@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { User } from '@/types';
-const API_URL = 'http://localhost:3000/api/users';
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
 
 const get = async (id: string): Promise<{ user: User }> => {
     try {

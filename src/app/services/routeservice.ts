@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { WalkRouteEntry, WalkRoute } from '@/types';
 
-const API_URL = 'http://localhost:3000/api/walkingroutes';
-const API_URL_USER = 'http://localhost:3000/api/users';
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/walkingroutes`;
+const API_URL_USER = `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
 
 export const create = async (routeData: WalkRouteEntry): Promise<WalkRoute> => {
   try {
