@@ -3,7 +3,7 @@
 
 ![](10kstepsdemo.gif)
 
-Live Demo: 
+Live Demo: https://master.d2z9r186ynf667.amplifyapp.com/
 
 Users can:
 
