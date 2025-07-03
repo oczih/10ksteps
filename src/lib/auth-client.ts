@@ -1,10 +1,11 @@
+
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import TwitterProvider from "next-auth/providers/twitter";
 import WalkUser from "@/app/models/usermodel";
 import { connectDB } from "@/lib/mongoose";
 
-const handler = NextAuth({
+export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -26,7 +27,9 @@ const handler = NextAuth({
   },
   callbacks: {
     async signIn({ user, account }) {
+      console.log("Sign in callback triggered:", { user, account });
       await connectDB();
+
       const provider = account?.provider;
       const providerId = account?.providerAccountId;
 
@@ -34,6 +37,7 @@ const handler = NextAuth({
 
       if (provider === "google") {
         existingUser = await WalkUser.findOne({ email: user.email });
+
         if (!existingUser) {
           existingUser = await WalkUser.create({
             email: user.email,
@@ -44,17 +48,20 @@ const handler = NextAuth({
             oauthId: providerId,
           });
         }
+
         user.email = existingUser.email;
         user.membership = existingUser.membership;
       }
 
       if (provider === "twitter") {
         const twitterId = providerId;
+        const fallbackEmail = "";
+
         existingUser = await WalkUser.findOne({ oauthId: twitterId });
 
         if (!existingUser) {
           existingUser = await WalkUser.create({
-            email: "",
+            email: fallbackEmail,
             username: user.name || `twitter_user_${twitterId}`,
             name: user.name,
             image: user.image,
@@ -62,6 +69,7 @@ const handler = NextAuth({
             oauthId: twitterId,
           });
         }
+
         user.email = existingUser.email;
         user.membership = existingUser.membership;
       }
@@ -81,6 +89,7 @@ const handler = NextAuth({
 
     async session({ session, token }) {
       if (!token?.email && !token?.sub) return session;
+
       await connectDB();
 
       const user = await WalkUser.findOne({
@@ -88,27 +97,24 @@ const handler = NextAuth({
       });
 
       if (user) {
-        session.user = {
-          id: user._id.toString(),
-          username: user.username,
-          email: user.email,
-          image: user.image,
-          name: user.name,
-          age: user.age,
-          weight: user.weight,
-          height: user.height,
-          gender: user.gender,
-          activityLevel: user.activityLevel,
-          goal: user.goal,
-          goalWeight: user.goalWeight,
-          googleId: user.googleId,
-          pace: user.pace,
-          membership: user.membership,
-          hasAccess: user.hasAccess,
-          lastUsernameChange: user.lastUsernameChange,
-          isUsernameChangeBlocked: user.isUsernameChangeBlocked,
-          emailVerified: user.emailVerified,
-        };
+        session.user.id = user._id.toString();
+        session.user.username = user.username;
+        session.user.email = user.email;
+        session.user.image = user.image;
+        session.user.name = user.name;
+        session.user.age = user.age;
+        session.user.weight = user.weight;
+        session.user.height = user.height;
+        session.user.gender = user.gender;
+        session.user.activityLevel = user.activityLevel;
+        session.user.goal = user.goal;
+        session.user.goalWeight = user.goalWeight;
+        session.user.googleId = user.googleId;
+        session.user.pace = user.pace;
+        session.user.membership = user.membership;
+        session.user.hasAccess = user.hasAccess;
+        session.user.lastUsernameChange = user.lastUsernameChange;
+        session.user.isUsernameChangeBlocked = user.isUsernameChangeBlocked;
       }
 
       return session;
@@ -121,5 +127,3 @@ const handler = NextAuth({
     },
   },
 });
-
-export { handler as GET, handler as POST };
