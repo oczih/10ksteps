@@ -1,15 +1,13 @@
-"use server"
-import { signIn } from "@/lib/auth-client"
- 
+'use client'
+import { signIn } from 'next-auth/react'
+
 export default function SignInTwitter() {
   return (
-    <form
-      action={async () => {
-        "use server"
-        await signIn("twitter")
-      }}
+    <button
+      onClick={() => signIn('twitter')}
+      className="btn btn-outline text-white border-white hover:bg-sky-500/50"
     >
-      <button type="submit" className="btn btn-outline text-white border-white hover:bg-sky-500/50">Signin with Twitter</button>
-    </form>
+      Sign in with Twitter
+    </button>
   )
-} 
+}

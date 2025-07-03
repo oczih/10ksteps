@@ -4,7 +4,7 @@ import TwitterProvider from "next-auth/providers/twitter";
 import WalkUser from "@/app/models/usermodel";
 import { connectDB } from "@/lib/mongoose";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+const handler = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -15,30 +15,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientSecret: process.env.TWITTER_CLIENT_SECRET!,
     }),
   ],
-
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
     updateAge: 24 * 60 * 60,
   },
-
   pages: {
     signIn: "/login",
     error: "/login",
   },
-
   callbacks: {
     async signIn({ user, account }) {
       await connectDB();
-    
       const provider = account?.provider;
       const providerId = account?.providerAccountId;
-    
+
       let existingUser;
-    
+
       if (provider === "google") {
         existingUser = await WalkUser.findOne({ email: user.email });
-    
         if (!existingUser) {
           existingUser = await WalkUser.create({
             email: user.email,
@@ -49,20 +44,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             oauthId: providerId,
           });
         }
-    
         user.email = existingUser.email;
         user.membership = existingUser.membership;
       }
-    
+
       if (provider === "twitter") {
         const twitterId = providerId;
-        const fallbackEmail = ``;
-    
         existingUser = await WalkUser.findOne({ oauthId: twitterId });
-    
+
         if (!existingUser) {
           existingUser = await WalkUser.create({
-            email: fallbackEmail,
+            email: "",
             username: user.name || `twitter_user_${twitterId}`,
             name: user.name,
             image: user.image,
@@ -70,14 +62,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             oauthId: twitterId,
           });
         }
-    
         user.email = existingUser.email;
         user.membership = existingUser.membership;
       }
-    
+
       return true;
     },
-    
 
     async jwt({ token, user }) {
       if (user) {
@@ -86,41 +76,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.email = user.email;
         token.membership = user.membership ?? false;
       }
-
       return token;
     },
 
     async session({ session, token }) {
       if (!token?.email && !token?.sub) return session;
-
       await connectDB();
 
       const user = await WalkUser.findOne({
-        $or: [
-          { email: token.email },
-          { oauthId: token.sub }, // fallback for Twitter
-        ],
+        $or: [{ email: token.email }, { oauthId: token.sub }],
       });
 
       if (user) {
-        session.user.id = user._id.toString();
-        session.user.username = user.username;
-        session.user.email = user.email;
-        session.user.image = user.image;
-        session.user.name = user.name;
-        session.user.age = user.age;
-        session.user.weight = user.weight;
-        session.user.height = user.height;
-        session.user.gender = user.gender;
-        session.user.activityLevel = user.activityLevel;
-        session.user.goal = user.goal;
-        session.user.goalWeight = user.goalWeight;
-        session.user.googleId = user.googleId;
-        session.user.pace = user.pace;
-        session.user.membership = user.membership;
-        session.user.hasAccess = user.hasAccess;
-        session.user.lastUsernameChange = user.lastUsernameChange;
-        session.user.isUsernameChangeBlocked = user.isUsernameChangeBlocked;
+        session.user = {
+          id: user._id.toString(),
+          username: user.username,
+          email: user.email,
+          image: user.image,
+          name: user.name,
+          age: user.age,
+          weight: user.weight,
+          height: user.height,
+          gender: user.gender,
+          activityLevel: user.activityLevel,
+          goal: user.goal,
+          goalWeight: user.goalWeight,
+          googleId: user.googleId,
+          pace: user.pace,
+          membership: user.membership,
+          hasAccess: user.hasAccess,
+          lastUsernameChange: user.lastUsernameChange,
+          isUsernameChangeBlocked: user.isUsernameChangeBlocked,
+          emailVerified: user.emailVerified,
+        };
       }
 
       return session;
@@ -133,3 +121,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 });
+
+export { handler as GET, handler as POST };
