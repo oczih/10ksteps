@@ -1,35 +1,8 @@
 "use client"
 import { signIn } from 'next-auth/react';
-import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 
 export default function SignIn() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleCredentialsSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        toast.error(result.error);
-      } else {
-        toast.success('Signed in successfully!');
-      }
-    } catch (error) {
-      toast.error('An error occurred during sign in');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleOAuthSignIn = async (provider: string) => {
     try {
@@ -67,39 +40,7 @@ export default function SignIn() {
         </button>
       </div>
 
-      {/* Divider */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-px bg-gray-600"></div>
-        <span className="text-gray-400 text-sm">or</span>
-        <div className="flex-1 h-px bg-gray-600"></div>
-      </div>
-
-      {/* Credentials Form */}
-      <form onSubmit={handleCredentialsSubmit} className="flex flex-col gap-2">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="input input-bordered bg-transparent border-white text-white placeholder-gray-400"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="input input-bordered bg-transparent border-white text-white placeholder-gray-400"
-          required
-        />
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="btn btn-primary bg-sky-500 hover:bg-sky-600 text-white"
-        >
-          {isLoading ? 'Signing in...' : 'Sign in with Email'}
-        </button>
-      </form>
+      
     </div>
   );
 }

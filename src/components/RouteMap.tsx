@@ -15,6 +15,7 @@ import { IOSSwitch } from './IOSSwitch';
 import { BsStars } from "react-icons/bs";
 import userservice from '@/app/services/userservice';
 import ChangePace from './ChangePace';
+import { FaMap } from 'react-icons/fa';
 // Define proper types for route data
 interface RouteFeature {
   type: 'Feature';
@@ -1140,8 +1141,10 @@ export default function RouteMap() {
       <div className="max-w-10xl mx-auto space-y-6">
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
-            <h2 className="card-title text-2xl font-bold text-center mb-4">Create Your Walking Route</h2>
-            
+            <div className="flex items-center mb-2">
+              <FaMap className="text-4xl text-primary mr-3" />
+              <h1 className="text-4xl font-bold text-base-content">Map</h1>
+            </div>
             <div className="flex justify-between items-center mb-4">
               <div className="alert alert-info flex-1 mr-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
