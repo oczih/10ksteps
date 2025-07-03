@@ -1,5 +1,5 @@
 <h1>🚶 10K Steps</h1>
-<h2>Technologies: Typescript, Next.js, MongoDB, Stripe, Auth.js, Tailwind </h2>
+<h2>Technologies: Typescript, Next.js, MongoDB, Mapbox, Google Gemini, Stripe, Auth.js, Tailwind </h2>
 
 ![](10kstepsdemo.gif)
 
