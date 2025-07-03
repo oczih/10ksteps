@@ -30,13 +30,36 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       await connectDB();
-
-      if (account?.provider === "twitter") {
-        const twitterId = account.providerAccountId;
-        const fallbackEmail = ``
-
-        let existingUser = await WalkUser.findOne({ oauthId: twitterId });
-
+    
+      const provider = account?.provider;
+      const providerId = account?.providerAccountId;
+    
+      let existingUser;
+    
+      if (provider === "google") {
+        existingUser = await WalkUser.findOne({ email: user.email });
+    
+        if (!existingUser) {
+          existingUser = await WalkUser.create({
+            email: user.email,
+            username: user.name?.replace(/\s+/g, "_").toLowerCase() || `google_user_${providerId}`,
+            name: user.name,
+            image: user.image,
+            oauthProvider: "google",
+            oauthId: providerId,
+          });
+        }
+    
+        user.email = existingUser.email;
+        user.membership = existingUser.membership;
+      }
+    
+      if (provider === "twitter") {
+        const twitterId = providerId;
+        const fallbackEmail = ``;
+    
+        existingUser = await WalkUser.findOne({ oauthId: twitterId });
+    
         if (!existingUser) {
           existingUser = await WalkUser.create({
             email: fallbackEmail,
@@ -47,14 +70,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             oauthId: twitterId,
           });
         }
-
-        // Inject fallback email so it propagates into JWT/session
+    
         user.email = existingUser.email;
         user.membership = existingUser.membership;
       }
-
+    
       return true;
     },
+    
 
     async jwt({ token, user }) {
       if (user) {
@@ -96,7 +119,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.pace = user.pace;
         session.user.membership = user.membership;
         session.user.hasAccess = user.hasAccess;
-        session.user.lastPasswordChange = user.lastPasswordChange;
+        session.user.lastUsernameChange = user.lastUsernameChange;
+        session.user.isUsernameChangeBlocked = user.isUsernameChangeBlocked;
       }
 
       return session;

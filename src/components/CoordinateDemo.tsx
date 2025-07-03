@@ -11,23 +11,26 @@ import {
   extractCoordinatesAsLatLng,
   testCoordinateParsing
 } from '@/lib/coordinate-parser';
-import { useRoute } from "@/app/context/RouteContext";
-import { sendPrompt } from "@/app/services/aiservice";
-import { parseCoordinates } from "@/app/lib/coordinate-parser";
 
+
+  
 export default function CoordinateDemo() {
   const [inputText, setInputText] = useState('');
   const [results, setResults] = useState<{
-    scanResult: any;
-    mapCoords: any;
+    scanResult: {
+      coordinates: [number, number][];
+    };
+    mapCoords: [number, number][];
     hasCoords: boolean;
     formatted: string;
-    geoJSON: any;
-    lngLat: any;
-    latLng: any;
+    geoJSON: {
+      type: string;
+      coordinates: [number, number][];
+    };
+    lngLat: [number, number][];
+    latLng: [number, number][];
   } | null>(null);
 
-  const { addCoordinatesFromGemini } = useRoute();
 
   const testTexts = [
     "Here's a walking route in Helsinki: [60.1699, 24.9384], [60.1732, 24.9415], [60.1755, 24.9452]",
@@ -37,10 +40,6 @@ export default function CoordinateDemo() {
     "Mixed format: [60.1699, 24.9384] and (40.7128, -74.0060)",
     "Here is a wonderful walk around Helsinki that will take you through many of its iconic sights, covering approximately 8 kilometers (around 10,000 steps). [60.1691, 24.9522], [60.1669, 24.9525], [60.1678, 24.9590]"
   ];
-
-  const useTestText = (text: string) => {
-    setInputText(text);
-  };
 
   const analyzeText = () => {
     if (!inputText.trim()) return;
@@ -54,13 +53,22 @@ export default function CoordinateDemo() {
     const latLng = extractCoordinatesAsLatLng(inputText);
 
     setResults({
-      scanResult,
-      mapCoords,
+      scanResult: {
+        coordinates: scanResult.coordinates.map((coord) => [coord.latitude, coord.longitude]),
+      },
+      mapCoords: mapCoords.map((coord) => [coord.latitude, coord.longitude]),
       hasCoords,
       formatted,
-      geoJSON,
-      lngLat,
-      latLng
+      geoJSON: {
+        type: geoJSON.type,
+        coordinates: geoJSON.features.flatMap((feature) =>
+          Array.isArray(feature.geometry.coordinates[0])
+            ? feature.geometry.coordinates as unknown as [number, number][]
+            : [feature.geometry.coordinates as [number, number]]
+        ),
+      },
+      lngLat: lngLat.map((coord) => [coord[1], coord[0]]),
+      latLng: latLng.map((coord) => [coord[0], coord[1]]),
     });
   };
 
@@ -68,13 +76,6 @@ export default function CoordinateDemo() {
     console.log('Running coordinate parsing tests...');
     testCoordinateParsing();
     alert('Tests completed! Check the browser console for results.');
-  };
-
-  const handleGeminiResponse = async (prompt, messages) => {
-    const geminiText = await sendPrompt(prompt, messages);
-
-    const coordinates = parseCoordinates(geminiText);
-    addCoordinatesFromGemini(coordinates);
   };
 
   return (
@@ -88,7 +89,10 @@ export default function CoordinateDemo() {
           {testTexts.map((text, index) => (
             <button
               key={index}
-              onClick={() => useTestText(text)}
+              onClick={() => {
+                setInputText(text);
+                analyzeText();
+              }}
               className="text-left p-2 bg-white border rounded hover:bg-blue-50 transition-colors"
             >
               <span className="text-sm text-gray-600">Example {index + 1}:</span>

@@ -1,4 +1,4 @@
-import mongoose, { Schema, models, model } from 'mongoose';
+import mongoose, { models, model } from 'mongoose';
 
 const walkRouteSchema = new mongoose.Schema({
     steps: { type: Number, required: true},
@@ -11,7 +11,7 @@ const walkRouteSchema = new mongoose.Schema({
       type: [[Number]],
       required: true,
       validate: {
-        validator: (arr) =>
+        validator: (arr: [number, number][]) =>
           Array.isArray(arr) && arr.every(coord => Array.isArray(coord) && coord.length === 2 && coord.every(Number.isFinite)),
         message: 'Coordinates must be an array of [number, number] pairs',
       },

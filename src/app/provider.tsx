@@ -40,13 +40,15 @@ const SessionSync = ({ children }: { children: React.ReactNode }) => {
               walkingroutes: [],
               password: '',
               googleId: session.user.googleId || null,
+              lastUsernameChange: session.user.lastUsernameChange || new Date(),
+              isUsernameChangeBlocked: session.user.isUsernameChangeBlocked || false,
             };
             setUser(user);
           }
         } catch {
           // Fallback to session data if API call fails
           const user: User = {
-            _id: session.user.id || '',
+            id: session.user.id || '',
             username: session.user.username || '',
             email: session.user.email || '',
             name: session.user.name || '',
@@ -61,6 +63,8 @@ const SessionSync = ({ children }: { children: React.ReactNode }) => {
             walkingroutes: [],
             password: '',
             googleId: session.user.googleId || null,
+            lastUsernameChange: session.user.lastUsernameChange || new Date(),
+            isUsernameChangeBlocked: session.user.isUsernameChangeBlocked || false,
           };
           setUser(user);
         }

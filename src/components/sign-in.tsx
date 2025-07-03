@@ -8,7 +8,7 @@ export default function SignIn() {
     try {
       await signIn(provider, { callbackUrl: '/map' });
     } catch (error) {
-      toast.error(`Error signing in with ${provider}`);
+      toast.error(`Error signing in with ${provider}, ${error}`);
     }
   };
 

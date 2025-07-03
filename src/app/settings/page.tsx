@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { Header } from '@/components/Header';
 import { useEffect, useState } from 'react';
 import { useUser } from '@/app/context/UserContext';
-import routeservice from '@/app/services/routeservice';
+import { getUserRoutes } from '@/app/services/routeservice';
 import { WalkRoute } from '@/types';
 import { useRouter } from 'next/navigation';
 import ChangePace from '@/components/ChangePace';
@@ -17,7 +17,7 @@ import { toast, ToastContainer } from 'react-toastify';
 export default function Settings() {
     const router = useRouter();
     const { user, setUser } = useUser();
-    const { data: session, status } = useSession();
+    const { data: session} = useSession();
     
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -30,18 +30,12 @@ export default function Settings() {
     const [isLoading, setIsLoading] = useState(true);
     const [gender, setGender] = useState<string>('male');
     const [username, setUsername] = useState<string>('');
-    const [isPasswordChangeBlocked, setIsPasswordChangeBlocked] = useState(false);
-    console.log("isPasswordChangeBlocked:", isPasswordChangeBlocked)
-    console.log("session:", session)
-    console.log("user:", session?.user)
-    console.log("status:", status)
+    const [isUsernameChangeBlocked, setIsUsernameChangeBlocked] = useState(false);
     useEffect(() => {
         const fetchUser = async () => { 
             if (session?.user?.id) {
-                console.log("session?.user?.id:",session?.user?.id)
                 try {
                     const fetchedUser = await userservice.get(session.user.id);
-                    console.log("Fetched user:", fetchedUser);
                     setName(fetchedUser.user.name || '');
                     setEmail(fetchedUser.user.email || '');
                     setAge(fetchedUser.user.age || 25);
@@ -60,24 +54,31 @@ export default function Settings() {
         }
         fetchUser();
     }, [session?.user?.id]);
-    console.log("session?.user?.lastPasswordChange:", session?.user)
+
     useEffect(() => {
-        let lastChange = session?.user?.lastPasswordChange;
+        if (session?.user?.isUsernameChangeBlocked) {
+            setIsUsernameChangeBlocked(true);
+        }
+    }, [session?.user?.isUsernameChangeBlocked]);
+    
+    useEffect(() => {
+        let lastChange = session?.user?.lastUsernameChange;
         if (lastChange && typeof lastChange === 'string') {
             lastChange = new Date(lastChange);
         }
         const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000; // ms
         const now = Date.now();
         if (lastChange && now - new Date(lastChange).getTime() < SEVEN_DAYS) {
-            setIsPasswordChangeBlocked(true);
+            setIsUsernameChangeBlocked(true);
         } else {
-            setIsPasswordChangeBlocked(false);
+            setIsUsernameChangeBlocked(false);
         }
-    }, [session?.user?.id, session?.user?.lastPasswordChange]);
+    }, [session?.user?.id, session?.user?.lastUsernameChange]);
     useEffect(() => {
         const fetchRoutes = async () => {
             if (user) {
-                const fetchedRoutes: WalkRoute[] = await routeservice.getUserRoutes(user);
+                const fetchedRoutes: WalkRoute[] = await getUserRoutes(user);
+
                 setRoutes(fetchedRoutes);
             }
         };
@@ -191,12 +192,12 @@ export default function Settings() {
     };
     const handleUserNameChange = async(event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (isPasswordChangeBlocked) {
+        if (isUsernameChangeBlocked) {
             toast.error('You can only change your username or password once every 7 days.');
             return;
         }
         try {
-            await userservice.update(session?.user?.id ?? '', {username: username, lastPasswordChange: new Date()});
+            await userservice.update(session?.user?.id ?? '', {username: username, lastUsernameChange: new Date()});
             toast.success('Username updated successfully');
         } catch (error) {
             console.error('Error updating username:', error);
@@ -258,14 +259,14 @@ export default function Settings() {
                                 </div>
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium mb-1">Username</label>
-                                    {isPasswordChangeBlocked && (
+                                    {isUsernameChangeBlocked && (
                                         <div className="text-red-500 text-sm mb-1">
-                                            You can only change your username or password once every 7 days.
+                                            You can only change your username once every 7 days.
                                         </div>
                                     )}
                                     <form onSubmit={handleUserNameChange} className='flex items-center gap-2'>
                                         <input
-                                            disabled={isPasswordChangeBlocked}
+                                            disabled={isUsernameChangeBlocked}
                                             type="text"
                                             value={username}
                                             onChange={(e) => setUsername(e.target.value)}

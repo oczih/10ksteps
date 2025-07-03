@@ -23,6 +23,7 @@ const update = async (id: string, newData: Partial<User>): Promise<{ user: User 
     }
 }
 
+// eslint-disable-next-line import/no-anonymous-default-export
 export default {
     update,
     get,

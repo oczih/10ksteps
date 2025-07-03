@@ -17,7 +17,6 @@ export default function Page() {
   );
 }
 
-// Separate the app logic
 import { useUser } from "@/app/context/UserContext";
 
 function App() {
@@ -28,14 +27,12 @@ function App() {
   const router = useRouter();
 
   useEffect(() => {
-    // Small delay to ensure user context is loaded
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 100);
     return () => clearTimeout(timer);
   }, []);
 
-  // Redirect logged-in users to appropriate page after loading
   console.log("user:",session?.user)
   useEffect(() => {
     if (!isLoading && session?.user) {
@@ -47,7 +44,7 @@ function App() {
     }
   }, [session, isLoading, router]);
 
-  // Show modal only once per login if missing info
+
   useEffect(() => {
     if (
       user && (
@@ -64,12 +61,10 @@ function App() {
     }
   }, [user]);
 
-  // Prevent rendering anything for logged-in users
   if (user) {
-    return null; // or a loading spinner if you prefer
+    return null;
   }
 
-  // Show loading spinner while loading
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#181f2a] via-[#232b39] to-[#10141a]">
@@ -80,10 +75,8 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#181f2a] via-[#232b39] to-[#10141a] relative overflow-hidden">
-      {/* Header at the very top */}
       <Header user={user} setUser={setUser} />
       <Toaster position="top-right" reverseOrder={false} />
-      {/* Dialog for missing info */}
       <Dialog open={showModal} onClose={() => setShowModal(false)} className="fixed inset-0 z-50 flex items-center justify-center">
         <div className="fixed inset-0 bg-black bg-opacity-60" aria-hidden="true" />
         <DialogPanel className="bg-[#232b39] rounded-2xl shadow-2xl p-8 max-w-sm w-full flex flex-col items-center gap-4 border border-[#2d3748]">
@@ -93,7 +86,6 @@ function App() {
           <button onClick={() => setShowModal(false)} className="mt-2 px-4 py-2 rounded bg-yellow-400 text-gray-900 font-bold hover:bg-yellow-500">Dismiss</button>
         </DialogPanel>
       </Dialog>
-      {/* Globe SVG as subtle accent, smaller and in the bottom right */}
       <main className="z-10 flex flex-col gap-6 items-center mx-auto mb-3 justify-center align-middle mt-24">
         <h3 className="text-5xl md:text-6xl font-extrabold text-center leading-tight relative text-white">
           Walk around with a goal
@@ -114,9 +106,7 @@ function App() {
           </motion.button>
         </Link>
       </main>
-      {/* Pros and Cons Section */}
       <section className="z-10 flex flex-col md:flex-row items-center justify-center w-full mt-6 gap-6">
-        {/* Pros Card */}
         <div className="bg-[#232b39] bg-opacity-90 rounded-2xl shadow-xl p-6 max-w-md w-full flex flex-col gap-4 border border-[#2d3748]">
           <h4 className="text-2xl font-bold text-green-400 text-center mb-2 flex items-center justify-center gap-2">
             <span className="font-bold text-3xl">+</span> Why use 10K Steps?
@@ -132,7 +122,6 @@ function App() {
             </li>
           </ul>
         </div>
-        {/* Cons Card */}
         <div className="bg-[#232b39] bg-opacity-90 rounded-2xl shadow-xl p-6 max-w-md w-full flex flex-col gap-4 border border-[#2d3748]">
           <h4 className="text-2xl font-bold text-red-400 text-center mb-2 flex items-center justify-center gap-2">
             <span className="font-bold text-3xl">-</span> Potential Downsides
@@ -161,7 +150,6 @@ function App() {
           </ul>
         </div>
       </section>
-      {/* AI Feature Card */}
       <div className="z-10 flex flex-col items-center justify-center w-full mt-4">
         <div className="bg-[#232b39] bg-opacity-90 rounded-2xl shadow-xl p-6 max-w-md w-full flex flex-col gap-4 border border-[#ffd700]">
           <h4 className="text-2xl font-bold text-yellow-300 text-center mb-2 flex items-center justify-center gap-2">
@@ -170,7 +158,6 @@ function App() {
           <p className="text-white text-center">Set custom goals and get personalized route and activity suggestions powered by AI.</p>
         </div>
       </div>
-      {/* Custom highlighter effect style for dark background */}
       <style jsx>{`
         .highlighted-text {
           position: relative;

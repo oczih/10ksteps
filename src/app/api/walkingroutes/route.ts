@@ -54,8 +54,12 @@ export async function POST(request: Request) {
     console.log("✅ New route created:", newRoute);
     return NextResponse.json({ walkingroute: newRoute });
 
-  } catch (error: any) {
-    console.error("❌ Error in POST /api/walkingroutes:", error.message, error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("❌ Error in POST /api/walkingroutes:", error.message, error);
+    } else {
+      console.error("❌ Error in POST /api/walkingroutes:", error);
+    }
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

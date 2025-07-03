@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { BsStars, BsMap, BsSpeedometer2, BsGraphUp, BsHeart, BsGeoAlt } from 'react-icons/bs';
 import Input from '@mui/material/Input';
 import userservice from '@/app/services/userservice';
-import WalkUser from '@/app/models/usermodel'; // adjust path as needed
+ // adjust path as needed
 
 export default function SubscribePage() {
     const { data: session, status, update } = useSession();

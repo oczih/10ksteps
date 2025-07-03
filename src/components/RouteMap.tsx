@@ -1,16 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import routeservice from '@/app/services/routeservice';
+import { getUserRoutes, create } from '@/app/services/routeservice';
 import { useRoute } from '@/app/context/RouteContext';
 import { useSession } from 'next-auth/react';
 import toast, { Toaster } from 'react-hot-toast';
 import { WalkRoute } from '@/types';
-import Slider from '@mui/material/Slider';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import { IOSSwitch } from './IOSSwitch';
 import { BsStars } from "react-icons/bs";
 import userservice from '@/app/services/userservice';
@@ -81,385 +78,112 @@ export default function RouteMap() {
   mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || '';
 
   // Handle coordinates from Gemini chat
-  useEffect(() => {
-    if (contextCoordinates.length > 0) {
-      console.log('Received coordinates from Gemini:', contextCoordinates);
-      setCoordinates(contextCoordinates);
-      setCenter(contextCoordinates[0]);
-      // Show success notification
-      toast.success(`🗺️ Added ${contextCoordinates.length} coordinates from AI to map!`, {
-        duration: 3000,
-        style: {
-          border: '1px solid #10b981',
-          padding: '16px',
-          color: '#065f46',
-        },
-        iconTheme: {
-          primary: '#10b981',
-          secondary: '#ffffff',
-        },
-      });
-      
-      // Clear the context coordinates after using them
-      clearCoordinates();
-    }
-  }, [contextCoordinates, clearCoordinates]);
+  const calculateHaversineDistance = useCallback((point1: [number, number], point2: [number, number]): number => {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = point1[1] * Math.PI / 180;
+    const φ2 = point2[1] * Math.PI / 180;
+    const Δφ = (point2[1] - point1[1]) * Math.PI / 180;
+    const Δλ = (point2[0] - point1[0]) * Math.PI / 180;
 
-  // Handle routing mode changes
-  useEffect(() => {
-    if (coordinates.length >= 2) {
-      // Show notification about routing mode change
-      toast.success(
-        `Route recalculated using ${useExactWaypoints ? 'exact AI waypoints' : 'optimized path'}`, 
-        { 
-          duration: 2000,
-          style: {
-            border: '1px solid #3b82f6',
-            padding: '16px',
-            color: '#1e40af',
-          },
-          iconTheme: {
-            primary: '#3b82f6',
-            secondary: '#ffffff',
-          },
-        }
-      );
-      
-      // Recalculate route with new mode
-      updateRoute(coordinates);
-    }
-  }, [useExactWaypoints]);
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  // Fetch saved routes
-  useEffect(() => {
-    const fetchRoutes = async () => {
+    return R * c;
+  }, []);
+  const createCustomRoute = useCallback(async (points: [number, number][]): Promise<RouteData | null> => {
+    if (points.length < 2) return null;
+
+    const features: RouteFeature[] = [];
+    let totalDistance = 0;
+    let totalDuration = 0;
+
+    // Create route segments between consecutive waypoints
+    for (let i = 0; i < points.length - 1; i++) {
+      const start = points[i];
+      const end = points[i + 1];
+      
       try {
-        if (session?.user) {
-          const routes = await routeservice.getUserRoutes(session.user);
-          setSavedRoutes(routes);
+        // Get directions for this segment
+        const coordsString = `${start.join(',')};${end.join(',')}`;
+        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${coordsString}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.routes && data.routes[0]) {
+          const route = data.routes[0];
+          const segmentFeature: RouteFeature = {
+            type: 'Feature',
+            properties: {
+              segment: i + 1,
+              distance: route.distance,
+              duration: route.duration
+            },
+            geometry: route.geometry
+          };
+          
+          features.push(segmentFeature);
+          totalDistance += route.distance;
+          totalDuration += route.duration;
+        } else {
+          // If Mapbox can't find a route, create a straight line
+          console.warn(`No route found for segment ${i + 1}, creating straight line`);
+          const straightLineFeature: RouteFeature = {
+            type: 'Feature',
+            properties: {
+              segment: i + 1,
+              distance: calculateHaversineDistance(start, end),
+              duration: calculateHaversineDistance(start, end) / 1.4 // Assume 1.4 m/s walking speed
+            },
+            geometry: {
+              type: 'LineString',
+              coordinates: [start, end]
+            }
+          };
+          
+          features.push(straightLineFeature);
+          totalDistance += straightLineFeature.properties.distance;
+          totalDuration += straightLineFeature.properties.duration;
         }
       } catch (error) {
-        console.error('Error fetching routes:', error);
-        toast.error('Failed to load saved routes');
+        console.error(`Error getting route for segment ${i + 1}:`, error);
+        // Create a straight line as fallback
+        const straightLineFeature: RouteFeature = {
+          type: 'Feature',
+          properties: {
+            segment: i + 1,
+            distance: calculateHaversineDistance(start, end),
+            duration: calculateHaversineDistance(start, end) / 1.4
+          },
+          geometry: {
+            type: 'LineString',
+            coordinates: [start, end]
+          }
+        };
+        
+        features.push(straightLineFeature);
+        totalDistance += straightLineFeature.properties.distance;
+        totalDuration += straightLineFeature.properties.duration;
+      }
+    }
+
+    // Create the final GeoJSON FeatureCollection
+    const customRoute: RouteData = {
+      type: 'FeatureCollection',
+      features: features,
+      properties: {
+        totalDistance: totalDistance,
+        totalDuration: totalDuration,
+        waypointCount: points.length
       }
     };
 
-    if (status === 'authenticated') {
-      fetchRoutes();
-    }
-  }, [status, session]);
-
-  // Initialize map only once
-  useEffect(() => {
-    // Always try to initialize the map when the component mounts
-    if (!mapContainer.current) return;
-
-    // Clean up any existing map instance
-    if (mapRef.current) {
-      markersRef.current.forEach(marker => marker.remove());
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
-
-    console.log('Initializing map...');
-    const mapInstance = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/arvom1/cmcdmsnxr019n01si7fvtg2pa',
-      center: center,
-      zoom: 14,
-    });
-
-    mapInstance.addControl(new mapboxgl.NavigationControl());
-    mapRef.current = mapInstance;
-
-    // Wait for map to load before allowing interactions
-    mapInstance.on('load', () => {
-      console.log('Map loaded initially');
-      
-      // Add source and layer for temporary lines between markers
-      mapInstance.addSource('temp-route', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: []
-          }
-        }
-      });
-
-      mapInstance.addLayer({
-        id: 'temp-route',
-        type: 'line',
-        source: 'temp-route',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-          visibility: 'visible'
-        },
-        paint: {
-          'line-color': '#ff0000',
-          'line-width': 3,
-          'line-opacity': 0.7
-        }
-      });
-      
-      // Set up click handler after map is loaded
-      mapInstance.on('click', (e: mapboxgl.MapMouseEvent) => {
-        e.preventDefault();
-        const newCoord: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-        
-        if (editingmode) {
-          // In editing mode, just add markers without updating route
-          const marker = new mapboxgl.Marker({ color: 'red' })
-            .setLngLat(newCoord)
-            .addTo(mapInstance);
-          
-          markersRef.current.push(marker);
-          setCoordinates(prev => {
-            const newCoords = [...prev, newCoord];
-            
-            // Only add temp-route if we have at least 2 points
-            if (newCoords.length >= 2) {
-              // Create temp-route source if it doesn't exist
-              if (!mapInstance.getSource('temp-route')) {
-                mapInstance.addSource('temp-route', {
-                  type: 'geojson',
-                  data: {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: {
-                      type: 'LineString',
-                      coordinates: []
-                    }
-                  }
-                });
-
-                mapInstance.addLayer({
-                  id: 'temp-route',
-                  type: 'line',
-                  source: 'temp-route',
-                  layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round',
-                    'visibility': 'visible'
-                  },
-                  paint: {
-                    'line-color': '#ff0000',
-                    'line-width': 3,
-                    'line-opacity': 0.7
-                  }
-                });
-              }
-
-              // Update temp-route with current coordinates
-              (mapInstance.getSource('temp-route') as mapboxgl.GeoJSONSource).setData({
-                type: 'Feature',
-                properties: {},
-                geometry: {
-                  type: 'LineString',
-                  coordinates: newCoords
-                }
-              });
-            }
-
-            return newCoords;
-          });
-        } else {
-          // Normal mode - add markers and update route
-          setCoordinates(prev => [...prev, newCoord]);
-          
-          const marker = new mapboxgl.Marker({ color: 'red' })
-            .setLngLat(newCoord)
-            .addTo(mapInstance);
-          
-          markersRef.current.push(marker);
-        }
-      });
-    });
-
-    return () => {
-      console.log('Cleaning up map...');
-      // Clean up markers and map on unmount
-      markersRef.current.forEach(marker => marker.remove());
-      mapInstance.remove();
-      mapRef.current = null;
-    };
-  }, [center, editingmode]); // Only re-run when editing mode or center changes
-
-  // Handle coordinate updates separately
-  useEffect(() => {
-    const mapInstance = mapRef.current;
-    if (!mapInstance) return;
-
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
-
-    // Add markers for all coordinates
-    coordinates.forEach(coord => {
-      const marker = new mapboxgl.Marker({ color: 'red' })
-        .setLngLat(coord)
-        .addTo(mapInstance);
-      markersRef.current.push(marker);
-    });
-
-    // Update temporary line layer if in editing mode
-    if (editingmode && mapInstance.getSource('temp-route')) {
-      (mapInstance.getSource('temp-route') as mapboxgl.GeoJSONSource).setData({
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: coordinates
-        }
-      });
-    }
-
-    // Update route if in normal mode and have enough points
-    if (!editingmode && coordinates.length >= 2) {
-      updateRoute(coordinates);
-    }
-  }, [coordinates, editingmode]);
-
-  // Load selected route from localStorage
-  useEffect(() => {
-    const loadRouteData = async () => {
-      const selectedRouteData = localStorage.getItem('selectedRoute');
-      if (!selectedRouteData) return;
-
-      console.log('Loading route from localStorage...');
-      const route = JSON.parse(selectedRouteData);
-      console.log(route)
-      setSelectedRoute(route.id);
-      setCoordinates(route.coordinates);
-      setSteps(route.steps);
-      setTime(route.time);
-      setDistance(route.distance);
-      setCalories(route.calories);
-      setCenter(route.coordinates[0]);
-      // Clear localStorage after loading
-      localStorage.removeItem('selectedRoute');
-    };
-
-    loadRouteData().catch(error => {
-      console.error('Error loading route data:', error);
-      toast.error('Failed to load route');
-    });
-  }, []); // Only run once when component mounts
-
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.pace) {
-      setPace(session.user.pace);
-    }
-  }, [status, session]);
-
-  // Handle route selection
-  const handleRouteSelect = async (routeId: string) => {
-    const route = savedRoutes.find(r => r.id === routeId);
-    if (!route) return;
-    setCenter(route.coordinates[0]);
-    setSelectedRoute(routeId);
-    setCoordinates(route.coordinates);
-    setSteps(route.steps);
-    setTime(route.time);
-    setDistance(route.distance);
-    setCalories(route.calories);
-
-    const map = mapRef.current;
-    if (!map) return;
-
-    // Wait for map to be loaded
-    if (!map.loaded()) {
-      await new Promise<void>((resolve) => {
-        const checkMap = () => {
-          if (map.loaded()) {
-            resolve();
-          } else {
-            setTimeout(checkMap, 100);
-          }
-        };
-        checkMap();
-      });
-    }
-
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
-
-    // Add markers for the selected route
-    route.coordinates.forEach(coord => {
-      const marker = new mapboxgl.Marker({ color: 'red' })
-        .setLngLat(coord)
-        .addTo(map);
-      markersRef.current.push(marker);
-    });
-
-    // Update the map view and add route line
-    if (route.coordinates.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-      route.coordinates.forEach(coord => bounds.extend(coord));
-      map.fitBounds(bounds, { padding: 50 });
-      await updateRoute(route.coordinates);
-    }
-  };
-
-  const handleClearMap = () => {
-    // Clear markers
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
-
-    // Clear route from map
-    const map = mapRef.current;
-    if (map?.getSource('route')) {
-      map.removeLayer('route');
-      map.removeSource('route');
-    }
-
-    // Reset states
-    setCoordinates([]);
-    setSteps(0);
-    setTime(0);
-    setDistance(0);
-    setCalories(0);
-    setSelectedRoute('');
-  };
-
-  // Handle route updates separately
-  useEffect(() => {
-    if (coordinates.length >= 2 && !editingmode) {
-      updateRoute(coordinates);
-    }
-  }, [coordinates, editingmode]);
-
-  // Recalculate duration when pace changes
-  useEffect(() => {
-    if (originalDuration > 0 && pace > 0) {
-      // Calculate the base walking speed from original duration
-      const baseWalkingSpeed = 1.4; // m/s (5 km/h) - Mapbox's default walking speed
-      const newWalkingSpeed = pace * 1000 / 3600; // Convert km/h to m/s
-      
-      // Adjust time based on pace ratio
-      const paceRatio = baseWalkingSpeed / newWalkingSpeed;
-      const newTime = Math.round(originalDuration * paceRatio);
-      setTime(newTime);
-      
-      // Recalculate calories based on new time
-      const MET = 3.8;
-      const weightKg = session?.user?.weight ?? 70;
-      const durationHours = newTime / 60;
-      const estimatedCalories = Math.round(MET * weightKg * durationHours);
-      setCalories(estimatedCalories);
-    }
-  }, [pace, originalDuration, session?.user?.weight]);
-
-  const updateRoute = async (points: [number, number][]) => {
-    if (points.length < 2 || !mapRef.current) {
-      console.log('Early return conditions:', {
-        pointsLength: points.length,
-        mapExists: !!mapRef.current
-      });
+    return customRoute;
+  }, [calculateHaversineDistance]);
+  const updateRoute = useCallback(async (points: [number, number][]) => {
+    if (points.length < 2 || !mapRef.current) { 
       return;
     }
 
@@ -498,11 +222,9 @@ export default function RouteMap() {
         // Use Mapbox's optimized route (original behavior)
         const coordsString = points.map((coord) => coord.join(',')).join(';');
         const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${coordsString}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
-        console.log('Fetching optimized route from:', url);
 
         const res = await fetch(url);
         const data = await res.json();
-        console.log('Optimized route data:', data);
         
         if (data.routes && data.routes[0]) {
           routeData = {
@@ -673,116 +395,394 @@ export default function RouteMap() {
       console.error('Error updating route:', error);
       toast.error('Failed to update route');
     }
-  };
-
-  // Create a custom route that follows the exact waypoints
-  const createCustomRoute = async (points: [number, number][]): Promise<RouteData | null> => {
-    if (points.length < 2) return null;
-
-    const features: RouteFeature[] = [];
-    let totalDistance = 0;
-    let totalDuration = 0;
-
-    // Create route segments between consecutive waypoints
-    for (let i = 0; i < points.length - 1; i++) {
-      const start = points[i];
-      const end = points[i + 1];
+  }, [
+    mapRef,
+    useExactWaypoints,
+    editingmode,
+    setCoordinates,
+    setCalories,
+    setSteps,
+    setDistance,
+    setTime,
+    setOriginalDuration,
+    session,
+    markersRef,
+    createCustomRoute,
+    calculateHaversineDistance,
+  ]);
+  useEffect(() => {
+    if (contextCoordinates.length > 0) {
+      setCoordinates(contextCoordinates);
+      setCenter(contextCoordinates[0]);
+      // Show success notification
+      toast.success(`🗺️ Added ${contextCoordinates.length} coordinates from AI to map!`, {
+        duration: 3000,
+        style: {
+          border: '1px solid #10b981',
+          padding: '16px',
+          color: '#065f46',
+        },
+        iconTheme: {
+          primary: '#10b981',
+          secondary: '#ffffff',
+        },
+      });
       
+      // Clear the context coordinates after using them
+      clearCoordinates();
+    }
+  }, [contextCoordinates, clearCoordinates]);
+
+  // Handle routing mode changes
+  useEffect(() => {
+    if (coordinates.length >= 2) {
+      // Show notification about routing mode change
+      toast.success(
+        `Route recalculated using ${useExactWaypoints ? 'exact AI waypoints' : 'optimized path'}`, 
+        { 
+          duration: 2000,
+          style: {
+            border: '1px solid #3b82f6',
+            padding: '16px',
+            color: '#1e40af',
+          },
+          iconTheme: {
+            primary: '#3b82f6',
+            secondary: '#ffffff',
+          },
+        }
+      );
+      
+      // Recalculate route with new mode
+      updateRoute(coordinates);
+    }
+  }, [useExactWaypoints, coordinates, updateRoute]);
+
+  // Fetch saved routes
+  useEffect(() => {
+    const fetchRoutes = async () => {
       try {
-        // Get directions for this segment
-        const coordsString = `${start.join(',')};${end.join(',')}`;
-        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${coordsString}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
-        
-        const res = await fetch(url);
-        const data = await res.json();
-        
-        if (data.routes && data.routes[0]) {
-          const route = data.routes[0];
-          const segmentFeature: RouteFeature = {
-            type: 'Feature',
-            properties: {
-              segment: i + 1,
-              distance: route.distance,
-              duration: route.duration
-            },
-            geometry: route.geometry
-          };
-          
-          features.push(segmentFeature);
-          totalDistance += route.distance;
-          totalDuration += route.duration;
-        } else {
-          // If Mapbox can't find a route, create a straight line
-          console.warn(`No route found for segment ${i + 1}, creating straight line`);
-          const straightLineFeature: RouteFeature = {
-            type: 'Feature',
-            properties: {
-              segment: i + 1,
-              distance: calculateHaversineDistance(start, end),
-              duration: calculateHaversineDistance(start, end) / 1.4 // Assume 1.4 m/s walking speed
-            },
-            geometry: {
-              type: 'LineString',
-              coordinates: [start, end]
-            }
-          };
-          
-          features.push(straightLineFeature);
-          totalDistance += straightLineFeature.properties.distance;
-          totalDuration += straightLineFeature.properties.duration;
+        if (session?.user) {
+          const routes = await getUserRoutes(session.user);
+          setSavedRoutes(routes);
         }
       } catch (error) {
-        console.error(`Error getting route for segment ${i + 1}:`, error);
-        // Create a straight line as fallback
-        const straightLineFeature: RouteFeature = {
-          type: 'Feature',
-          properties: {
-            segment: i + 1,
-            distance: calculateHaversineDistance(start, end),
-            duration: calculateHaversineDistance(start, end) / 1.4
-          },
-          geometry: {
-            type: 'LineString',
-            coordinates: [start, end]
-          }
-        };
-        
-        features.push(straightLineFeature);
-        totalDistance += straightLineFeature.properties.distance;
-        totalDuration += straightLineFeature.properties.duration;
-      }
-    }
-
-    // Create the final GeoJSON FeatureCollection
-    const customRoute: RouteData = {
-      type: 'FeatureCollection',
-      features: features,
-      properties: {
-        totalDistance: totalDistance,
-        totalDuration: totalDuration,
-        waypointCount: points.length
+        console.error('Error fetching routes:', error);
+        toast.error('Failed to load saved routes');
       }
     };
 
-    console.log('Custom route created:', customRoute);
-    return customRoute;
+    if (status === 'authenticated') {
+      fetchRoutes();
+    }
+  }, [status, session]);
+
+  // Initialize map only once
+  useEffect(() => {
+    // Always try to initialize the map when the component mounts
+    if (!mapContainer.current) return;
+
+    // Clean up any existing map instance
+    if (mapRef.current) {
+      markersRef.current.forEach(marker => marker.remove());
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+
+    const mapInstance = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/arvom1/cmcdmsnxr019n01si7fvtg2pa',
+      center: center,
+      zoom: 14,
+    });
+
+    mapInstance.addControl(new mapboxgl.NavigationControl());
+    mapRef.current = mapInstance;
+
+    // Wait for map to load before allowing interactions
+    mapInstance.on('load', () => {
+      
+      // Add source and layer for temporary lines between markers
+      mapInstance.addSource('temp-route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: []
+          }
+        }
+      });
+
+      mapInstance.addLayer({
+        id: 'temp-route',
+        type: 'line',
+        source: 'temp-route',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+          visibility: 'visible'
+        },
+        paint: {
+          'line-color': '#ff0000',
+          'line-width': 3,
+          'line-opacity': 0.7
+        }
+      });
+      
+      // Set up click handler after map is loaded
+      mapInstance.on('click', (e: mapboxgl.MapMouseEvent) => {
+        e.preventDefault();
+        const newCoord: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+        
+        if (editingmode) {
+          // In editing mode, just add markers without updating route
+          const marker = new mapboxgl.Marker({ color: 'red' })
+            .setLngLat(newCoord)
+            .addTo(mapInstance);
+          
+          markersRef.current.push(marker);
+          setCoordinates(prev => {
+            const newCoords = [...prev, newCoord];
+            
+            // Only add temp-route if we have at least 2 points
+            if (newCoords.length >= 2) {
+              // Create temp-route source if it doesn't exist
+              if (!mapInstance.getSource('temp-route')) {
+                mapInstance.addSource('temp-route', {
+                  type: 'geojson',
+                  data: {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: {
+                      type: 'LineString',
+                      coordinates: []
+                    }
+                  }
+                });
+
+                mapInstance.addLayer({
+                  id: 'temp-route',
+                  type: 'line',
+                  source: 'temp-route',
+                  layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round',
+                    'visibility': 'visible'
+                  },
+                  paint: {
+                    'line-color': '#ff0000',
+                    'line-width': 3,
+                    'line-opacity': 0.7
+                  }
+                });
+              }
+
+              // Update temp-route with current coordinates
+              (mapInstance.getSource('temp-route') as mapboxgl.GeoJSONSource).setData({
+                type: 'Feature',
+                properties: {},
+                geometry: {
+                  type: 'LineString',
+                  coordinates: newCoords
+                }
+              });
+            }
+
+            return newCoords;
+          });
+        } else {
+          // Normal mode - add markers and update route
+          setCoordinates(prev => [...prev, newCoord]);
+          
+          const marker = new mapboxgl.Marker({ color: 'red' })
+            .setLngLat(newCoord)
+            .addTo(mapInstance);
+          
+          markersRef.current.push(marker);
+        }
+      });
+    });
+
+    return () => {
+      // Clean up markers and map on unmount
+      markersRef.current.forEach(marker => marker.remove());
+      mapInstance.remove();
+      mapRef.current = null;
+    };
+  }, [center, editingmode]); // Only re-run when editing mode or center changes
+
+  // Handle coordinate updates separately
+  useEffect(() => {
+    const mapInstance = mapRef.current;
+    if (!mapInstance) return;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Add markers for all coordinates
+    coordinates.forEach(coord => {
+      const marker = new mapboxgl.Marker({ color: 'red' })
+        .setLngLat(coord)
+        .addTo(mapInstance);
+      markersRef.current.push(marker);
+    });
+
+    // Update temporary line layer if in editing mode
+    if (editingmode && mapInstance.getSource('temp-route')) {
+      (mapInstance.getSource('temp-route') as mapboxgl.GeoJSONSource).setData({
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: coordinates
+        }
+      });
+    }
+
+    // Update route if in normal mode and have enough points
+    if (!editingmode && coordinates.length >= 2) {
+      updateRoute(coordinates);
+    }
+  }, [coordinates, editingmode, updateRoute]);
+
+  // Load selected route from localStorage
+  useEffect(() => {
+    const loadRouteData = async () => {
+      const selectedRouteData = localStorage.getItem('selectedRoute');
+      if (!selectedRouteData) return;
+
+      const route = JSON.parse(selectedRouteData);
+      setSelectedRoute(route.id);
+      setCoordinates(route.coordinates);
+      setSteps(route.steps);
+      setTime(route.time);
+      setDistance(route.distance);
+      setCalories(route.calories);
+      setCenter(route.coordinates[0]);
+      // Clear localStorage after loading
+      localStorage.removeItem('selectedRoute');
+    };
+
+    loadRouteData().catch(error => {
+      console.error('Error loading route data:', error);
+      toast.error('Failed to load route');
+    });
+  }, []); // Only run once when component mounts
+
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.pace) {
+      setPace(session.user.pace);
+    }
+  }, [status, session]);
+
+  // Handle route selection
+  const handleRouteSelect = async (routeId: string) => {
+    const route = savedRoutes.find(r => r.id === routeId);
+    if (!route) return;
+    setCenter(route.coordinates[0]);
+    setSelectedRoute(routeId);
+    setCoordinates(route.coordinates);
+    setSteps(route.steps);
+    setTime(route.time);
+    setDistance(route.distance);
+    setCalories(route.calories);
+
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Wait for map to be loaded
+    if (!map.loaded()) {
+      await new Promise<void>((resolve) => {
+        const checkMap = () => {
+          if (map.loaded()) {
+            resolve();
+          } else {
+            setTimeout(checkMap, 100);
+          }
+        };
+        checkMap();
+      });
+    }
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Add markers for the selected route
+    route.coordinates.forEach(coord => {
+      const marker = new mapboxgl.Marker({ color: 'red' })
+        .setLngLat(coord)
+        .addTo(map);
+      markersRef.current.push(marker);
+    });
+
+    // Update the map view and add route line
+    if (route.coordinates.length > 0) {
+      const bounds = new mapboxgl.LngLatBounds();
+      route.coordinates.forEach(coord => bounds.extend(coord));
+      map.fitBounds(bounds, { padding: 50 });
+      await updateRoute(route.coordinates);
+    }
+  };
+
+  const handleClearMap = () => {
+    // Clear markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Clear route from map
+    const map = mapRef.current;
+    if (map?.getSource('route')) {
+      map.removeLayer('route');
+      map.removeSource('route');
+    }
+
+    // Reset states
+    setCoordinates([]);
+    setSteps(0);
+    setTime(0);
+    setDistance(0);
+    setCalories(0);
+    setSelectedRoute('');
   };
 
   // Calculate distance between two points using Haversine formula
-  const calculateHaversineDistance = (point1: [number, number], point2: [number, number]): number => {
-    const R = 6371e3; // Earth's radius in meters
-    const φ1 = point1[1] * Math.PI / 180;
-    const φ2 = point2[1] * Math.PI / 180;
-    const Δφ = (point2[1] - point1[1]) * Math.PI / 180;
-    const Δλ = (point2[0] - point1[0]) * Math.PI / 180;
 
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    return R * c;
-  };
+  // Create a custom route that follows the exact waypoints
+
+
+
+  // Handle route updates separately
+  useEffect(() => {
+    if (coordinates.length >= 2 && !editingmode) {
+      updateRoute(coordinates);
+    }
+  }, [coordinates , editingmode, updateRoute]);
+
+  // Recalculate duration when pace changes
+  useEffect(() => {
+    if (originalDuration > 0 && pace > 0) {
+      // Calculate the base walking speed from original duration
+      const baseWalkingSpeed = 1.4; // m/s (5 km/h) - Mapbox's default walking speed
+      const newWalkingSpeed = pace * 1000 / 3600; // Convert km/h to m/s
+      
+      // Adjust time based on pace ratio
+      const paceRatio = baseWalkingSpeed / newWalkingSpeed;
+      const newTime = Math.round(originalDuration * paceRatio);
+      setTime(newTime);
+      
+      // Recalculate calories based on new time
+      const MET = 3.8;
+      const weightKg = session?.user?.weight ?? 70;
+      const durationHours = newTime / 60;
+      const estimatedCalories = Math.round(MET * weightKg * durationHours);
+      setCalories(estimatedCalories);
+    }
+  }, [pace, originalDuration, session?.user?.weight]);
 
   const handleSaveRoute = async () => {
     if (!session?.user?.id) {
@@ -804,8 +804,7 @@ export default function RouteMap() {
     };
 
     try {
-      console.log('Saving route with coordinates:', coordinates);
-      const newRoute = await routeservice.create(routeData);
+      const newRoute = await create(routeData);
       
       console.log('Route saved:', newRoute);
       toast.success('Route saved successfully', {

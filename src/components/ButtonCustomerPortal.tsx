@@ -25,7 +25,7 @@ const ButtonCustomerPortal = () => {
     }
 
     return (
-        <button className="btn" onClick={signIn}>
+        <button className="btn" onClick={() => signIn()}>
             Login
         </button>
     );

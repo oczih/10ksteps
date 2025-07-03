@@ -45,7 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   
       // Check if trying to change the username
       if (username && username !== user.username) {
-        const lastChange = user.lastPasswordChange || new Date(0);
+        const lastChange = user.lastUsernameChange || new Date(0);
         const now = new Date();
         const diffMs = now.getTime() - lastChange.getTime();
         const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
   
         user.username = username;
-        user.lastPasswordChange = now;
+        user.lastUsernameChange = now;
       }
   
       // Update the rest of the fields
