@@ -3,19 +3,16 @@ import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { connectDB } from '@/lib/mongoose';
 import WalkUser from '@/app/models/usermodel';
+import { getToken } from '@auth/core/jwt';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-const AUTH_HEADER = 'authorization';
-const EXPECTED_TOKEN = process.env.PRIVATE_API_TOKEN;
-function isAuthorized(request: Request): boolean {
-  const authHeader = request.headers.get(AUTH_HEADER);
-  return authHeader === `Bearer ${EXPECTED_TOKEN}`;
-}
+const secret = process.env.NEXTAUTH_SECRET;
 export async function POST(req: Request) {
-    if (!isAuthorized(req)) {
-        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-      }
+    const token = await getToken({ req: req, secret });
+    if (!token) {
+        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
     await connectDB();
 
     const body = await req.text();

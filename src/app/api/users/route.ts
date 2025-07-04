@@ -1,21 +1,16 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongoose';
-// import WalkRoute from '@/app/models/walkroutemodel';
+// Import WalkRoute first to ensure it's registered
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import WalkRoute from '@/app/models/walkroutemodel';
 import WalkUser from '@/app/models/usermodel';
-
-const AUTH_HEADER = 'authorization';
-const EXPECTED_TOKEN = process.env.PRIVATE_API_TOKEN; // Set this in Vercel
-
-function isAuthorized(request: Request): boolean {
-  const authHeader = request.headers.get(AUTH_HEADER);
-  return authHeader === `Bearer ${EXPECTED_TOKEN}`;
-}
-
+import { getToken } from '@auth/core/jwt';
+const secret = process.env.NEXTAUTH_SECRET;
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const token = await getToken({ req: request, secret });
+  if (!token) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-
   await connectDB();
 
   try {
@@ -28,10 +23,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const token = await getToken({ req: request, secret });
+  if (!token) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-
   await connectDB();
 
   try {
