@@ -77,13 +77,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
 
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+     
+    
+      if (account) {
+        token.accessToken = account.access_token;
+      }
+    
       if (user) {
         token.id = user.id;
         token.username = user.username;
         token.email = user.email;
         token.membership = user.membership ?? false;
       }
+    
       return token;
     },
 
@@ -115,6 +122,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.hasAccess = user.hasAccess;
         session.user.lastUsernameChange = user.lastUsernameChange;
         session.user.isUsernameChangeBlocked = user.isUsernameChangeBlocked;
+        session.accessToken = token.accessToken as string;
       }
 
       return session;

@@ -32,6 +32,7 @@ export type User = {
   hasAccess?: boolean
   lastUsernameChange: Date
   isUsernameChangeBlocked: boolean
+  accessToken?: string
 }
 
 declare module "next-auth" {
@@ -52,6 +53,7 @@ declare module "next-auth" {
       email?: string;
       lastUsernameChange?: Date;
       isUsernameChangeBlocked?: boolean;
+      accessToken?: string;
     }
   
     interface Session {
