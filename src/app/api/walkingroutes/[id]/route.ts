@@ -5,10 +5,10 @@ import { getToken } from '@auth/core/jwt';
 const secret = process.env.NEXTAUTH_SECRET;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const token = await getToken({ req: request, secret });
-    if (!token) {
-        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-      }
+  const token = await getToken({ req: request, secret });
+  if (!token) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
     await connectDB();
     const { id } = await params;
   
@@ -59,12 +59,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const token = await getToken({ req: request, secret });
-    if (!token) {
-        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-      }
-    await connectDB();
+  const token = await getToken({ req: request, secret });
+  if (!token) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
     const { id } = await params;
+    if (token.sub !== id) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+    await connectDB();
     try{
         const route = await WalkRoute.findByIdAndDelete(id);
         if(!route){

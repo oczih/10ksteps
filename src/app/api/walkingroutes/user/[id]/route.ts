@@ -8,7 +8,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const token = await getToken({ req: request, secret });
     if (!token) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-      }
+    }
     await connectDB();
     const { id } = await params;
     try {

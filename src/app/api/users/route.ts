@@ -8,11 +8,11 @@ import { getToken } from '@auth/core/jwt';
 const secret = process.env.NEXTAUTH_SECRET;
 export async function GET(request: Request) {
   const token = await getToken({ req: request, secret });
-  if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!token || token.role !== 'admin') {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
-  await connectDB();
 
+  await connectDB();
   try {
     const users = await WalkUser.find({}).populate('walkingroutes');
     return NextResponse.json({ users });
@@ -23,10 +23,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const token = await getToken({ req: request, secret });
-  if (!token) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
   await connectDB();
 
   try {

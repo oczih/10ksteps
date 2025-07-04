@@ -1,11 +1,8 @@
 import axios from 'axios';
 
-const API_URL = '/api/ai';
-
-
 export const sendPrompt = async (prompt: string, messages: string[]): Promise<string> => {
   try {
-    const response = await axios.post(API_URL, { prompt, messages });
+    const response = await axios.post('/api/ai', { prompt, messages });
     return response.data.text;
   } catch (error) {
     if (axios.isAxiosError(error)) {
