@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/mongoose';
 import WalkRoute from '@/app/models/walkroutemodel';
+const AUTH_HEADER = 'authorization';
+const EXPECTED_TOKEN = process.env.PRIVATE_API_TOKEN; // Set this in Vercel
 
+function isAuthorized(request: Request): boolean {
+  const authHeader = request.headers.get(AUTH_HEADER);
+  return authHeader === `Bearer ${EXPECTED_TOKEN}`;
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    if (!isAuthorized(request)) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }
     await connectDB();
     const { id } = await params;
   
@@ -21,6 +30,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 
   export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    if (!isAuthorized(request)) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }
     await connectDB();
     const { id } = await params;
   
@@ -50,6 +62,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    if (!isAuthorized(request)) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }
     await connectDB();
     const { id } = await params;
     try{
