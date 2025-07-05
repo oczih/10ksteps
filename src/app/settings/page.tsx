@@ -53,7 +53,7 @@ export default function Settings() {
             }
         }
         fetchUser();
-    }, [session?.user?.id]);
+    }, [session?.user?.id, session?.accessToken]);
 
     useEffect(() => {
         if (session?.user?.isUsernameChangeBlocked) {
@@ -83,7 +83,7 @@ export default function Settings() {
             }
         };
         fetchRoutes();
-    }, [user]);
+    }, [user, session?.accessToken]);
 
 
     const stridelength =Math.round(height*(gender === 'male' ? 0.415 : 0.413));
