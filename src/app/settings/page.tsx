@@ -8,7 +8,6 @@ import { getUserRoutes } from '@/app/services/routeservice';
 import { WalkRoute } from '@/types';
 import { useRouter } from 'next/navigation';
 import ChangePace from '@/components/ChangePace';
-import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
 import userservice from '@/app/services/userservice';
 import Input from '@mui/material/Input';
@@ -231,41 +230,41 @@ export default function Settings() {
     }
 
     return (
-        <div className="min-h-screen bg-base-200">
+        <div className="min-h-screen bg-[#232b39]">
             <ToastContainer />
             <Header user={user} setUser={setUser} />
             
             <div className="container mx-auto px-4 py-4 sm:py-8">
                 <div className="flex items-center justify-center mb-6 sm:mb-8">
-                    <FaCog className="text-3xl sm:text-4xl text-primary mr-2 sm:mr-3" />
-                    <h1 className="text-3xl sm:text-4xl font-bold text-base-content">Settings</h1>
+                    <FaCog className="text-3xl sm:text-4xl text-yellow-400 mr-2 sm:mr-3" />
+                    <h1 className="text-3xl sm:text-4xl font-bold text-white">Settings</h1>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-6xl mx-auto">
                     {/* Personal Information Card */}
-                    <div className="card bg-base-100 shadow-xl">
+                    <div className="card bg-[#2d3748] shadow-xl border border-[#4a5568]">
                         <div className="card-body p-4 sm:p-6">
                             <div className="flex items-center mb-4 sm:mb-6">
-                                <FaUser className="text-xl sm:text-2xl text-primary mr-2 sm:mr-3" />
-                                <h2 className="card-title text-xl sm:text-2xl font-bold text-base-content">
+                                <FaUser className="text-xl sm:text-2xl text-yellow-400 mr-2 sm:mr-3" />
+                                <h2 className="card-title text-xl sm:text-2xl font-bold text-white">
                                     Personal Information
                                 </h2>
                             </div>
                             
                             <div className="space-y-4">
-                                <div className="bg-base-200 p-3 sm:p-4 rounded-lg">
-                                    <div className="text-sm text-base-content/70 mb-1">
+                                <div className="bg-[#374151] p-3 sm:p-4 rounded-lg border border-[#4a5568]">
+                                    <div className="text-sm text-gray-300 mb-1">
                                         Name
                                     </div>
-                                    <div className="text-base sm:text-lg font-semibold text-base-content">
+                                    <div className="text-base sm:text-lg font-semibold text-white">
                                         {name}
                                     </div>
                                 </div>
                                 
                                 <div className="mb-4">
-                                    <label className="block text-sm font-medium mb-1">Username</label>
+                                    <label className="block text-sm font-medium text-white mb-1">Username</label>
                                     {isUsernameChangeBlocked && (
-                                        <div className="text-red-500 text-xs sm:text-sm mb-1">
+                                        <div className="text-red-400 text-xs sm:text-sm mb-1">
                                             You can only change your username once every 7 days.
                                         </div>
                                     )}
@@ -275,32 +274,32 @@ export default function Settings() {
                                             type="text"
                                             value={username}
                                             onChange={(e) => setUsername(e.target.value)}
-                                            className='input input-bordered w-full bg-base-100 text-base-content text-sm sm:text-base'
+                                            className='input input-bordered w-full bg-[#374151] text-white border-[#4a5568] text-sm sm:text-base focus:border-yellow-400'
                                         />
                                         <button
                                             type="submit"
-                                            className='btn btn-primary text-sm sm:text-base px-4 py-2'
+                                            className='btn bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-sm sm:text-base px-4 py-2 border-none'
                                         >
                                             Save
                                         </button>
                                     </form>
                                 </div>
                                 
-                                <div className="bg-base-200 p-3 sm:p-4 rounded-lg">
-                                    <div className="text-sm text-base-content/70 mb-1">
+                                <div className="bg-[#374151] p-3 sm:p-4 rounded-lg border border-[#4a5568]">
+                                    <div className="text-sm text-gray-300 mb-1">
                                         Email
                                     </div>
-                                    <div className="text-base sm:text-lg font-semibold text-base-content">
+                                    <div className="text-base sm:text-lg font-semibold text-white">
                                         {email}
                                     </div>
                                 </div>
                                 
-                                <div className="bg-base-200 p-3 sm:p-4 rounded-lg">
-                                    <div className="text-sm text-base-content/70 mb-1">
+                                <div className="bg-[#374151] p-3 sm:p-4 rounded-lg border border-[#4a5568]">
+                                    <div className="text-sm text-gray-300 mb-1">
                                         Activity Level
                                     </div>
                                     <select 
-                                        className="select select-bordered w-full bg-base-100 text-base-content text-sm sm:text-base"
+                                        className="select select-bordered w-full bg-[#374151] text-white border-[#4a5568] text-sm sm:text-base focus:border-yellow-400"
                                         value={activityLevel}
                                         onChange={handleActivityLevelChange}
                                     >
@@ -312,12 +311,12 @@ export default function Settings() {
                                     </select>
                                 </div>
                                 
-                                <div className='bg-base-200 p-3 sm:p-4 rounded-lg'>
-                                    <div className='text-sm text-base-content/70 mb-1'>
+                                <div className='bg-[#374151] p-3 sm:p-4 rounded-lg border border-[#4a5568]'>
+                                    <div className='text-sm text-gray-300 mb-1'>
                                         Gender
                                     </div>
                                     <select 
-                                        className="select select-bordered w-full bg-base-100 text-base-content text-sm sm:text-base"
+                                        className="select select-bordered w-full bg-[#374151] text-white border-[#4a5568] text-sm sm:text-base focus:border-yellow-400"
                                         value={gender}
                                         onChange={async (e) => {
                                             const newGender = e.target.value;
@@ -338,188 +337,266 @@ export default function Settings() {
                     </div>
 
                     {/* Physical Metrics Card */}
-                    <div className="card bg-base-100 shadow-xl">
+                    <div className="card bg-[#2d3748] shadow-xl border border-[#4a5568]">
                         <div className="card-body p-4 sm:p-6">
                             <div className="flex flex-col sm:flex-row sm:items-center mb-4 sm:mb-6">
                                 <div className="flex items-center mb-2 sm:mb-0">
-                                    <FaDumbbell className="text-xl sm:text-2xl text-primary mr-2 sm:mr-3" />
-                                    <h2 className="card-title text-xl sm:text-2xl font-bold text-base-content">
+                                    <FaDumbbell className="text-xl sm:text-2xl text-yellow-400 mr-2 sm:mr-3" />
+                                    <h2 className="card-title text-xl sm:text-2xl font-bold text-white">
                                         Physical Metrics
                                     </h2>
                                 </div>
-                                <div className='text-white text-sm sm:text-base ml-0 sm:ml-10'>
+                                <div className='text-gray-300 text-sm sm:text-base ml-0 sm:ml-10'>
                                     Your current stride length is {stridelength} cm
                                 </div>
                             </div>
 
                             {/* Age Slider */}
-                            <Box sx={{ mb: 4 }}>
-                                <div className="text-base sm:text-lg font-semibold text-white mb-2">
+                            <div className="bg-[#374151] p-4 rounded-lg mb-4 border border-[#4a5568]">
+                                <div className="text-base sm:text-lg font-semibold text-white mb-3">
                                     Age: {age} years
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <div className="space-y-4">
                                     <Slider
                                         aria-label="Age"
                                         value={age}
                                         onChange={handleAgeChange}
-                                        valueLabelDisplay="off"
+                                        valueLabelDisplay="auto"
                                         step={1}
                                         min={13}
                                         max={120}
                                         sx={{ 
                                             width: '100%',
+                                            height: 8,
                                             '& .MuiSlider-track': {
-                                                backgroundColor: 'hsl(var(--p))',
+                                                backgroundColor: '#3b82f6',
+                                                border: 'none',
+                                                height: 8,
                                             },
                                             '& .MuiSlider-thumb': {
-                                                backgroundColor: 'hsl(var(--p))',
+                                                backgroundColor: '#3b82f6',
+                                                border: '2px solid #ffffff',
+                                                width: 24,
+                                                height: 24,
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                                                '&:hover, &.Mui-focusVisible': {
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                                                    transform: 'scale(1.1)',
+                                                },
                                             },
                                             '& .MuiSlider-rail': {
-                                                backgroundColor: 'hsl(var(--bc) / 0.2)',
+                                                backgroundColor: '#374151',
+                                                height: 8,
+                                                borderRadius: 4,
+                                            },
+                                            '& .MuiSlider-valueLabel': {
+                                                backgroundColor: '#3b82f6',
+                                                color: '#ffffff',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 'bold',
                                             }
                                         }}
                                     />
-                                    <Input
-                                        value={age}
-                                        size="small"
-                                        onChange={handleAgeInputChange}
-                                        onBlur={handleAgeBlur}
-                                        sx={{ 
-                                            width: '100%',
-                                            maxWidth: '120px',
-                                            '& .MuiInputBase-input': {
-                                                textAlign: 'center',
-                                                color: 'white',
-                                                backgroundColor: 'hsl(var(--b2))',
-                                                borderRadius: '0.5rem',
-                                                border: '1px solid hsl(var(--bc) / 0.2)',
-                                                fontSize: '0.875rem'
-                                            }
-                                        }}
-                                        inputProps={{
-                                            step: 1,
-                                            min: 13,
-                                            max: 120,
-                                            type: 'number',
-                                            'aria-labelledby': 'age-slider',
-                                        }}
-                                    />
+                                    <div className="flex justify-center">
+                                        <Input
+                                            value={age}
+                                            size="small"
+                                            onChange={handleAgeInputChange}
+                                            onBlur={handleAgeBlur}
+                                            sx={{ 
+                                                width: '100px',
+                                                '& .MuiInputBase-input': {
+                                                    textAlign: 'center',
+                                                    color: '#ffffff',
+                                                    backgroundColor: '#374151',
+                                                    borderRadius: '0.5rem',
+                                                    border: '2px solid #3b82f6',
+                                                    fontSize: '1rem',
+                                                    fontWeight: 'bold',
+                                                    padding: '8px 12px',
+                                                    '&:focus': {
+                                                        borderColor: '#60a5fa',
+                                                        boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.3)',
+                                                    }
+                                                }
+                                            }}
+                                            inputProps={{
+                                                step: 1,
+                                                min: 13,
+                                                max: 120,
+                                                type: 'number',
+                                                'aria-labelledby': 'age-slider',
+                                            }}
+                                        />
+                                    </div>
                                 </div>
-                            </Box>
+                            </div>
 
                             {/* Weight Slider */}
-                            <Box sx={{ mb: 4 }}>
-                                <div className="text-base sm:text-lg font-semibold text-white mb-2">
+                            <div className="bg-[#374151] p-4 rounded-lg mb-4 border border-[#4a5568]">
+                                <div className="text-base sm:text-lg font-semibold text-white mb-3">
                                     Weight: {weight} kg
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <div className="space-y-4">
                                     <Slider
                                         aria-label="Weight"
                                         value={weight}
                                         onChange={handleWeightChange}
-                                        valueLabelDisplay="off"
+                                        valueLabelDisplay="auto"
                                         step={1}
                                         min={30}
                                         max={300}
                                         sx={{ 
                                             width: '100%',
+                                            height: 8,
                                             '& .MuiSlider-track': {
-                                                backgroundColor: 'hsl(var(--p))',
+                                                backgroundColor: '#10b981',
+                                                border: 'none',
+                                                height: 8,
                                             },
                                             '& .MuiSlider-thumb': {
-                                                backgroundColor: 'hsl(var(--p))',
+                                                backgroundColor: '#10b981',
+                                                border: '2px solid #ffffff',
+                                                width: 24,
+                                                height: 24,
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                                                '&:hover, &.Mui-focusVisible': {
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                                                    transform: 'scale(1.1)',
+                                                },
                                             },
                                             '& .MuiSlider-rail': {
-                                                backgroundColor: 'hsl(var(--bc) / 0.2)',
+                                                backgroundColor: '#374151',
+                                                height: 8,
+                                                borderRadius: 4,
+                                            },
+                                            '& .MuiSlider-valueLabel': {
+                                                backgroundColor: '#10b981',
+                                                color: '#ffffff',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 'bold',
                                             }
                                         }}
                                     />
-                                    <Input
-                                        value={weight}
-                                        size="small"
-                                        onChange={handleWeightInputChange}
-                                        onBlur={handleWeightBlur}
-                                        sx={{ 
-                                            width: '100%',
-                                            maxWidth: '120px',
-                                            '& .MuiInputBase-input': {
-                                                textAlign: 'center',
-                                                color: 'white',
-                                                backgroundColor: 'hsl(var(--b2))',
-                                                borderRadius: '0.5rem',
-                                                border: '1px solid hsl(var(--bc) / 0.2)',
-                                                fontSize: '0.875rem'
-                                            }
-                                        }}
-                                        inputProps={{
-                                            step: 1,
-                                            min: 30,
-                                            max: 300,
-                                            type: 'number',
-                                            'aria-labelledby': 'weight-slider',
-                                        }}
-                                    />
+                                    <div className="flex justify-center">
+                                        <Input
+                                            value={weight}
+                                            size="small"
+                                            onChange={handleWeightInputChange}
+                                            onBlur={handleWeightBlur}
+                                            sx={{ 
+                                                width: '100px',
+                                                '& .MuiInputBase-input': {
+                                                    textAlign: 'center',
+                                                    color: '#ffffff',
+                                                    backgroundColor: '#374151',
+                                                    borderRadius: '0.5rem',
+                                                    border: '2px solid #10b981',
+                                                    fontSize: '1rem',
+                                                    fontWeight: 'bold',
+                                                    padding: '8px 12px',
+                                                    '&:focus': {
+                                                        borderColor: '#34d399',
+                                                        boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.3)',
+                                                    }
+                                                }
+                                            }}
+                                            inputProps={{
+                                                step: 1,
+                                                min: 30,
+                                                max: 300,
+                                                type: 'number',
+                                                'aria-labelledby': 'weight-slider',
+                                            }}
+                                        />
+                                    </div>
                                 </div>
-                            </Box>
+                            </div>
 
                             {/* Height Slider */}
-                            <Box sx={{ mb: 4 }}>
-                                <div className="text-base sm:text-lg font-semibold text-white mb-2">
+                            <div className="bg-[#374151] p-4 rounded-lg mb-4 border border-[#4a5568]">
+                                <div className="text-base sm:text-lg font-semibold text-white mb-3">
                                     Height: {height} cm
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                <div className="space-y-4">
                                     <Slider
                                         aria-label="Height"
                                         value={height}
                                         onChange={handleHeightChange}
-                                        valueLabelDisplay="off"
+                                        valueLabelDisplay="auto"
                                         step={1}
                                         min={100}
                                         max={250}
                                         sx={{ 
                                             width: '100%',
+                                            height: 8,
                                             '& .MuiSlider-track': {
-                                                backgroundColor: 'hsl(var(--p))',
+                                                backgroundColor: '#f59e0b',
+                                                border: 'none',
+                                                height: 8,
                                             },
                                             '& .MuiSlider-thumb': {
-                                                backgroundColor: 'hsl(var(--p))',
+                                                backgroundColor: '#f59e0b',
+                                                border: '2px solid #ffffff',
+                                                width: 24,
+                                                height: 24,
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                                                '&:hover, &.Mui-focusVisible': {
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                                                    transform: 'scale(1.1)',
+                                                },
                                             },
                                             '& .MuiSlider-rail': {
-                                                backgroundColor: 'hsl(var(--bc) / 0.2)',
+                                                backgroundColor: '#374151',
+                                                height: 8,
+                                                borderRadius: 4,
+                                            },
+                                            '& .MuiSlider-valueLabel': {
+                                                backgroundColor: '#f59e0b',
+                                                color: '#ffffff',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 'bold',
                                             }
                                         }}
                                     />
-                                    <Input
-                                        value={height}
-                                        size="small"
-                                        onChange={handleHeightInputChange}
-                                        onBlur={handleHeightBlur}
-                                        sx={{ 
-                                            width: '100%',
-                                            maxWidth: '120px',
-                                            '& .MuiInputBase-input': {
-                                                textAlign: 'center',
-                                                color: 'white',
-                                                backgroundColor: 'hsl(var(--b2))',
-                                                borderRadius: '0.5rem',
-                                                border: '1px solid hsl(var(--bc) / 0.2)',
-                                                fontSize: '0.875rem'
-                                            }
-                                        }}
-                                        inputProps={{
-                                            step: 1,
-                                            min: 100,
-                                            max: 250,
-                                            type: 'number',
-                                            'aria-labelledby': 'height-slider',
-                                        }}
-                                    />
+                                    <div className="flex justify-center">
+                                        <Input
+                                            value={height}
+                                            size="small"
+                                            onChange={handleHeightInputChange}
+                                            onBlur={handleHeightBlur}
+                                            sx={{ 
+                                                width: '100px',
+                                                '& .MuiInputBase-input': {
+                                                    textAlign: 'center',
+                                                    color: '#ffffff',
+                                                    backgroundColor: '#374151',
+                                                    borderRadius: '0.5rem',
+                                                    border: '2px solid #f59e0b',
+                                                    fontSize: '1rem',
+                                                    fontWeight: 'bold',
+                                                    padding: '8px 12px',
+                                                    '&:focus': {
+                                                        borderColor: '#fbbf24',
+                                                        boxShadow: '0 0 0 3px rgba(245, 158, 11, 0.3)',
+                                                    }
+                                                }
+                                            }}
+                                            inputProps={{
+                                                step: 1,
+                                                min: 100,
+                                                max: 250,
+                                                type: 'number',
+                                                'aria-labelledby': 'height-slider',
+                                            }}
+                                        />
+                                    </div>
                                 </div>
-                            </Box>
+                            </div>
 
                             {/* Pace Settings */}
-                            <div className="mb-4">
-                                <div className="text-base sm:text-lg font-semibold text-white mb-2">
+                            <div className="bg-[#374151] p-4 rounded-lg mb-4 border border-[#4a5568]">
+                                <div className="text-base sm:text-lg font-semibold text-white mb-3">
                                     Walking Pace
                                 </div>
                                 <ChangePace 
@@ -534,36 +611,36 @@ export default function Settings() {
 
                 {/* Routes Card */}
                 <div className="mt-6 sm:mt-8 max-w-6xl mx-auto">
-                    <div className="card bg-base-100 shadow-xl">
+                    <div className="card bg-[#2d3748] shadow-xl border border-[#4a5568]">
                         <div className="card-body p-4 sm:p-6">
                             <div className="flex items-center mb-4 sm:mb-6">
-                                <FaRoute className="text-xl sm:text-2xl text-primary mr-2 sm:mr-3" />
-                                <h2 className="card-title text-xl sm:text-2xl font-bold text-base-content">
+                                <FaRoute className="text-xl sm:text-2xl text-yellow-400 mr-2 sm:mr-3" />
+                                <h2 className="card-title text-xl sm:text-2xl font-bold text-white">
                                     Your Routes
                                 </h2>
                             </div>
                             
                             {routes.length === 0 ? (
                                 <div className="text-center py-8">
-                                    <p className="text-base-content/70 text-sm sm:text-base">No routes saved yet. Create your first route on the map!</p>
+                                    <p className="text-gray-300 text-sm sm:text-base">No routes saved yet. Create your first route on the map!</p>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {routes.map((route) => (
-                                        <div key={route.id} className="bg-base-200 p-3 sm:p-4 rounded-lg">
-                                            <h3 className="font-semibold text-base-content text-sm sm:text-base mb-2">
+                                        <div key={route.id} className="bg-[#374151] p-3 sm:p-4 rounded-lg border border-[#4a5568]">
+                                            <h3 className="font-semibold text-white text-sm sm:text-base mb-2">
                                                 {route.routeName}
                                             </h3>
-                                            <p className="text-base-content/70 text-xs sm:text-sm mb-2">
+                                            <p className="text-gray-300 text-xs sm:text-sm mb-2">
                                                 {route.routeDescription}
                                             </p>
-                                            <div className="text-xs sm:text-sm text-base-content/60 mb-3">
+                                            <div className="text-xs sm:text-sm text-gray-400 mb-3">
                                                 <div>Distance: {(route.distance / 1000).toFixed(2)} km</div>
                                                 <div>Duration: {Math.round(route.time)} min</div>
                                             </div>
                                             <button
                                                 onClick={() => handleViewRoute(route)}
-                                                className="btn btn-primary btn-sm w-full text-xs sm:text-sm"
+                                                className="btn bg-yellow-400 hover:bg-yellow-500 text-gray-900 btn-sm w-full text-xs sm:text-sm border-none"
                                             >
                                                 View Route
                                             </button>

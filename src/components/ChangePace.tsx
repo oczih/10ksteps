@@ -11,27 +11,46 @@ interface ChangePaceProps {
 export default function ChangePace({ handleSliderChange, handlePaceChange, pace }: ChangePaceProps) {
     return (
         <Box className="w-full" sx={{ width: '100%' }}>
-            <Typography id="input-slider" gutterBottom className="text-sm sm:text-base">
+            <Typography id="input-slider" gutterBottom className="text-sm sm:text-base font-semibold text-white mb-3">
                 Pace: {pace} km/h
             </Typography>
             <Slider
                 aria-label="Pace"
                 value={pace}
                 onChange={handleSliderChange}
-                valueLabelDisplay="off"
+                valueLabelDisplay="auto"
                 step={0.1}
                 min={1}
                 max={10}
                 sx={{ 
                     width: '100%',
+                    height: 8,
                     '& .MuiSlider-track': {
-                        backgroundColor: 'hsl(var(--p))',
+                        backgroundColor: '#8b5cf6',
+                        border: 'none',
+                        height: 8,
                     },
                     '& .MuiSlider-thumb': {
-                        backgroundColor: 'hsl(var(--p))',
+                        backgroundColor: '#8b5cf6',
+                        border: '2px solid #ffffff',
+                        width: 24,
+                        height: 24,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                        '&:hover, &.Mui-focusVisible': {
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                            transform: 'scale(1.1)',
+                        },
                     },
                     '& .MuiSlider-rail': {
-                        backgroundColor: 'hsl(var(--bc) / 0.2)',
+                        backgroundColor: '#374151',
+                        height: 8,
+                        borderRadius: 4,
+                    },
+                    '& .MuiSlider-valueLabel': {
+                        backgroundColor: '#8b5cf6',
+                        color: '#ffffff',
+                        fontSize: '0.875rem',
+                        fontWeight: 'bold',
                     }
                 }}
             />
@@ -39,10 +58,10 @@ export default function ChangePace({ handleSliderChange, handlePaceChange, pace 
             {/* Alternative pace selector */}
             <div className="mt-4">
                 <label className="label">
-                    <span className="label-text font-medium text-xs sm:text-sm">Quick Pace Selection</span>
+                    <span className="label-text font-medium text-xs sm:text-sm text-white">Quick Pace Selection</span>
                 </label>
                 <select 
-                    className="select select-bordered w-full select-sm sm:select-md text-xs sm:text-sm" 
+                    className="select select-bordered w-full select-sm sm:select-md text-xs sm:text-sm bg-[#374151] text-white border-[#4a5568] focus:border-yellow-400" 
                     value={pace}
                     onChange={handlePaceChange}
                 >
