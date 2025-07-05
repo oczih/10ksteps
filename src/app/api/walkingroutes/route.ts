@@ -2,14 +2,13 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '../../../lib/mongoose';
 import WalkRoute from '@/app/models/walkroutemodel';
 import WalkUser from '@/app/models/usermodel';
-import { getToken } from '@auth/core/jwt';
-const secret = process.env.NEXTAUTH_SECRET;
+import { auth } from '@/lib/auth-client';
 
-export async function GET(request: Request) {
+export async function GET() {
   await connectDB();
   
-  const token = await getToken({ req: request, secret });
-  if (!token) {
+  const session = await auth();
+  if (!session) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
   
@@ -28,18 +27,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Database connection failed" }, { status: 500 });
   }
   
-  console.log("[API] NEXTAUTH_SECRET exists:", !!process.env.NEXTAUTH_SECRET);
-  console.log("[API] NEXTAUTH_SECRET length:", process.env.NEXTAUTH_SECRET?.length);
+  const session = await auth();
+  console.log("[API] Session from auth():", !!session);
+  console.log("[API] Session user ID:", session?.user?.id);
   
-  // Debug cookies - Request type doesn't have cookies property
-  console.log("[API] Request headers:", Object.fromEntries(request.headers.entries()));
-  
-  const token = await getToken({ req: request, secret });
-  console.log("[API] Token extracted:", !!token, "Token ID:", token?.id);
-  console.log("[API] Full token object:", JSON.stringify(token, null, 2));
-  
-  if (!token) {
-    console.log("[API] No token found - Unauthorized");
+  if (!session) {
+    console.log("[API] No session found - Unauthorized");
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
   

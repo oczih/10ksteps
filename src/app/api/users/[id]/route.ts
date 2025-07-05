@@ -4,8 +4,7 @@ import WalkUser from '@/app/models/usermodel';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import WalkRoute from '@/app/models/walkroutemodel';
 import mongoose from 'mongoose';
-import { getToken } from '@auth/core/jwt';
-const secret = process.env.NEXTAUTH_SECRET;
+import { auth } from '@/lib/auth-client';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   console.log("[API] GET /api/users/[id] - Starting request");
@@ -18,42 +17,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ message: "Database connection failed" }, { status: 500 });
   }
   
-  console.log("[API] NEXTAUTH_SECRET exists:", !!process.env.NEXTAUTH_SECRET);
-  console.log("[API] NEXTAUTH_SECRET length:", process.env.NEXTAUTH_SECRET?.length);
-  console.log("[API] NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
-  console.log("[API] Request URL:", request.url);
+  // Use NextAuth v5 auth function
+  const session = await auth();
+  console.log("[API] Session from auth():", !!session);
+  console.log("[API] Session user ID:", session?.user?.id);
   
-  // Debug cookies
-  const cookies = request.cookies;
-  const cookieNames = Array.from(cookies.getAll()).map(cookie => cookie.name);
-  console.log("[API] Available cookies:", cookieNames);
-  console.log("[API] Session token cookie:", cookies.get("__Secure-next-auth.session-token")?.value?.substring(0, 50) + "...");
-  console.log("[API] Regular session token cookie:", cookies.get("next-auth.session-token")?.value?.substring(0, 50) + "...");
-  
-  // Try to get token using getToken
-  const token = await getToken({ req: request, secret });
-  console.log("[API] Token extracted:", !!token, "Token ID:", token?.id);
-  console.log("[API] Full token object:", JSON.stringify(token, null, 2));
-  
-  // If getToken fails, try manual extraction
-  if (!token) {
-    console.log("[API] getToken failed, trying manual extraction...");
-    const sessionToken = cookies.get("__Secure-next-auth.session-token")?.value || 
-                        cookies.get("next-auth.session-token")?.value;
-    console.log("[API] Manual session token found:", !!sessionToken);
-  }
-
-  if (!token) {
-    console.log("[API] No token found - Unauthorized");
+  if (!session) {
+    console.log("[API] No session found - Unauthorized");
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
   console.log("[API] Requested user ID:", id);
 
-  console.log("[API] Token id:", token?.id, "Requested ID:", id);
-  if (token?.id !== id) {
-    console.log("[API] Token mismatch - Forbidden");
+  console.log("[API] Session user ID:", session?.user?.id, "Requested ID:", id);
+  if (session?.user?.id !== id) {
+    console.log("[API] Session user ID mismatch - Forbidden");
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -74,12 +53,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
   
   export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const token = await getToken({ req: request, secret });
-    if (!token) {
+    const session = await auth();
+    if (!session) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const { id } = await params;
-    if (token.id !== id) {
+    if (session.user?.id !== id) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
   
@@ -136,12 +115,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   
 
   export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const token = await getToken({ req: request, secret });
-    if (!token) {
+    const session = await auth();
+    if (!session) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const { id } = await params;
-    if (token.id !== id) {
+    if (session.user?.id !== id) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
     await connectDB();
