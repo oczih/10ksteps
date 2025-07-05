@@ -15,6 +15,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.TWITTER_CLIENT_SECRET!,
     }),
   ],
+  debug: process.env.NODE_ENV === 'development',
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
@@ -27,7 +28,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       console.log("Sign in callback triggered:", { user, account });
-      await connectDB();
+      console.log("Environment check - GOOGLE_CLIENT_ID:", !!process.env.GOOGLE_CLIENT_ID);
+      console.log("Environment check - MONGO_URI:", !!process.env.MONGO_URI);
+      
+      try {
+        await connectDB();
+      } catch (error) {
+        console.error("Database connection error in signIn:", error);
+        return false;
+      }
 
       const provider = account?.provider;
       const providerId = account?.providerAccountId;
@@ -100,7 +109,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (!token?.email && !token?.sub) return session;
 
-      await connectDB();
+      try {
+        await connectDB();
+      } catch (error) {
+        console.error("Database connection error in session:", error);
+        return session;
+      }
 
       console.log("[Session] Looking for user with token.email:", token.email, "token.sub:", token.sub, "token.id:", token.id);
 

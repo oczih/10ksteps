@@ -5,11 +5,12 @@ import { getToken } from '@auth/core/jwt';
 const secret = process.env.NEXTAUTH_SECRET;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    await connectDB();
+    
     const token = await getToken({ req: request, secret });
     if (!token) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-    await connectDB();
     const { id } = await params;
     try {
         const user = await WalkUser.findById(id).populate('walkingroutes');

@@ -7,12 +7,12 @@ import WalkUser from '@/app/models/usermodel';
 import { getToken } from '@auth/core/jwt';
 const secret = process.env.NEXTAUTH_SECRET;
 export async function GET(request: Request) {
+  await connectDB();
+  
   const token = await getToken({ req: request, secret });
   if (!token || token.role !== 'admin') {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
-
-  await connectDB();
   try {
     const users = await WalkUser.find({}).populate('walkingroutes');
     return NextResponse.json({ users });

@@ -6,22 +6,26 @@ import { getToken } from '@auth/core/jwt';
 const secret = process.env.NEXTAUTH_SECRET;
 
 export async function GET(request: Request) {
+  await connectDB();
+  
   const token = await getToken({ req: request, secret });
   if (!token) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-  await connectDB();
+  
   const walkingroutes = await WalkRoute.find();
   return NextResponse.json({ walkingroutes });
 }
 
 export async function POST(request: Request) {
+  await connectDB();
+  
   const token = await getToken({ req: request, secret });
   if (!token) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
+  
   try {
-    await connectDB();
     const body = await request.json();
     console.log("📥 Incoming request body:", body);
 
