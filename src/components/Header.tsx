@@ -34,11 +34,18 @@ export const Header = ({
       ];
   useEffect(() => {
     const fetchUser = async () => {
-      const user = await userservice.get(session?.user?.id ?? '');
-      setUser(user.user);
+      if (session?.user?.id && !user) {
+        try {
+          const userData = await userservice.get(session.user.id, session.accessToken);
+          setUser(userData.user);
+        } catch (error) {
+          console.error('Error fetching user in Header:', error);
+          // Don't show error toast here as it might be a 403 that's expected
+        }
+      }
     }
     fetchUser();
-  }, [session?.user?.id, setUser]);
+  }, [session?.user?.id, setUser, user, session?.accessToken]);
   const handleSignOut = async () => {
     await signOut({ redirect: false });
     setUser(null);

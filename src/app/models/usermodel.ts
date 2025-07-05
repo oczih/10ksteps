@@ -104,6 +104,8 @@ userSchema.set('toJSON', {
   },
 });
 
-const WalkUser = mongoose.models.WalkUser || model<UserDocument>('WalkUser', userSchema);
+const WalkUser = mongoose.models?.WalkUser || model<UserDocument>('WalkUser', userSchema);
+
+console.log("[WalkUser] Model registered:", !!WalkUser);
 
 export default WalkUser;

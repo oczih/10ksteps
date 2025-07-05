@@ -51,7 +51,6 @@ export default function GeminiChat() {
     try {
       const result = await sendPrompt(prompt, messages.map(m => m.text));
       
-      // Scan for coordinates in the response
       const coordinateResult = scanForCoordinates(result);
       
       const aiMessage: Message = {
@@ -62,7 +61,6 @@ export default function GeminiChat() {
       };
       setMessages(prev => [...prev, aiMessage]);
       
-      // Log found coordinates for debugging
       if (coordinateResult.hasCoordinates) {
         console.log('Found coordinates:', coordinateResult.coordinates);
       }

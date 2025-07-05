@@ -459,23 +459,26 @@ export default function RouteMap() {
   }, [useExactWaypoints, coordinates, updateRoute]);
 
   // Fetch saved routes
-  useEffect(() => {
-    const fetchRoutes = async () => {
-      try {
-        if (session?.user) {
-          const routes = await getUserRoutes(session.user);
-          setSavedRoutes(routes);
-        }
-      } catch (error) {
-        console.error('Error fetching routes:', error);
-        toast.error('Failed to load saved routes');
-      }
-    };
+  const hasFetchedRoutes = useRef(false);
 
-    if (status === 'authenticated') {
-      fetchRoutes();
+useEffect(() => {
+  const fetchRoutes = async () => {
+    try {
+      if (session?.user) {
+        const routes = await getUserRoutes(session.user);
+        setSavedRoutes(routes);
+        hasFetchedRoutes.current = true;
+      }
+    } catch (error) {
+      console.error("Error fetching routes:", error);
+      toast.error("Failed to load saved routes");
     }
-  }, [status, session]);
+  };
+
+  if (status === "authenticated" && !hasFetchedRoutes.current) {
+    fetchRoutes();
+  }
+}, [session, status, setSavedRoutes]);
 
   // Initialize map only once
   useEffect(() => {

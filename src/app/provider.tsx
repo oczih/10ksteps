@@ -10,15 +10,32 @@ type Props = {
   children?: React.ReactNode;
 };
 
-// Component to sync session with user context
+// Helper to create User object fallback from session data
+const createUserFromSession = (session: Session): User => ({
+  id: session?.user?.id || "",
+  username: session?.user?.username || "",
+  email: session?.user?.email || "",
+  name: session?.user?.name || "",
+  age: session?.user?.age || 0,
+  weight: session?.user?.weight || 0,
+  height: session?.user?.height || 0,
+  gender: session?.user?.gender || "",
+  activityLevel: session?.user?.activityLevel || "",
+  goal: session?.user?.goal || "",
+  goalWeight: session?.user?.goalWeight || 0,
+  pace: session?.user?.pace || 0,
+  walkingroutes: [],
+  password: "",
+  googleId: session?.user?.googleId || null,
+  lastUsernameChange: session?.user?.lastUsernameChange || new Date(),
+  isUsernameChangeBlocked: session?.user?.isUsernameChangeBlocked || false,
+});
+
 const SessionSync = ({ children }: { children: React.ReactNode }) => {
   const { data: session } = useSession();
   const { setUser } = useUser();
 
-  // Log session only when it changes to avoid spamming logs
   useEffect(() => {
-    console.log("session:", session);
-    console.log("session?.accessToken:", session?.accessToken);
   }, [session]);
 
   useEffect(() => {
@@ -27,20 +44,19 @@ const SessionSync = ({ children }: { children: React.ReactNode }) => {
         try {
           const response = await fetch(`/api/users/${session.user.id}`, {
             headers: {
-              // Pass the access token for authorization if needed
-              Authorization: `Bearer ${session.accessToken || ""}`,
               "Content-Type": "application/json",
             },
           });
+
           if (response.ok) {
             const { user } = await response.json();
             setUser(user);
           } else {
-            // fallback to session user data if API call fails
+            console.warn("Fallback to session data, API returned:", response.status);
             setUser(createUserFromSession(session));
           }
-        } catch {
-          // fallback to session user data if fetch throws error
+        } catch (error) {
+          console.error("Error fetching user from API:", error);
           setUser(createUserFromSession(session));
         }
       } else {
@@ -50,27 +66,6 @@ const SessionSync = ({ children }: { children: React.ReactNode }) => {
 
     fetchFullUser();
   }, [session, setUser]);
-
-  // Helper to create User object fallback from session data
-  const createUserFromSession = (session: Session): User => ({
-    id: session?.user?.id || "",
-    username: session?.user?.username || "",
-    email: session?.user?.email || "",
-    name: session?.user?.name || "",
-    age: session?.user?.age || 0,
-    weight: session?.user?.weight || 0,
-    height: session?.user?.height || 0,
-    gender: session?.user?.gender || "",
-    activityLevel: session?.user?.activityLevel || "",
-    goal: session?.user?.goal || "",
-    goalWeight: session?.user?.goalWeight || 0,
-    pace: session?.user?.pace || 0,
-    walkingroutes: [],
-    password: "",
-    googleId: session?.user?.googleId || null,
-    lastUsernameChange: session?.user?.lastUsernameChange || new Date(),
-    isUsernameChangeBlocked: session?.user?.isUsernameChangeBlocked || false,
-  });
 
   return <>{children}</>;
 };

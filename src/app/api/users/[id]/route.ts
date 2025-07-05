@@ -9,32 +9,32 @@ const secret = process.env.NEXTAUTH_SECRET;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const token = await getToken({ req: request, secret });
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-    const { id } = await params;
-    if (token.sub !== id) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
-    await connectDB();
-    if (!id || id === "undefined" || !mongoose.Types.ObjectId.isValid(id)) {
-        return NextResponse.json({ error: 'Valid MongoDB ObjectId is required' }, { status: 400 });
-    }
-    console.log("ID:", id);
-  
-    try {
-      console.log("Fetching user:", id);
-      const user = await WalkUser.findById(id).populate('walkingroutes');
-      if (!user) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
-      }
-      return NextResponse.json({ user });
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
-    }
+
+  const { id } = await params;
+
+  console.log("[API] Token id:", token?.id, "Requested ID:", id);
+  if (token?.id !== id) {
+    console.log("[API] Token mismatch - Forbidden");
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
+  await connectDB();
+
+  if (!id || id === "undefined" || !mongoose.Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ error: 'Valid MongoDB ObjectId is required' }, { status: 400 });
+  }
+
+  try {
+    const user = await WalkUser.findById(id).populate('walkingroutes');
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    return NextResponse.json({ user });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
+  }
+}
   
   export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const token = await getToken({ req: request, secret });
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const { id } = await params;
-    if (token.sub !== id) {
+    if (token.id !== id) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
   
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const { id } = await params;
-    if (token.sub !== id) {
+    if (token.id !== id) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
     await connectDB();

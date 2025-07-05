@@ -39,4 +39,6 @@ walkRouteSchema.set('toJSON', {
 
 const WalkRoute = models.WalkRoute || model('WalkRoute', walkRouteSchema);
 
+console.log("[WalkRoute] Model registered:", !!WalkRoute);
+
 export default WalkRoute

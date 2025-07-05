@@ -1,4 +1,3 @@
-
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import TwitterProvider from "next-auth/providers/twitter";
@@ -49,6 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
         }
 
+        user.id = existingUser._id.toString();
         user.email = existingUser.email;
         user.membership = existingUser.membership;
       }
@@ -70,6 +70,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
         }
 
+        user.id = existingUser._id.toString();
         user.email = existingUser.email;
         user.membership = existingUser.membership;
       }
@@ -85,7 +86,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
     
       if (user) {
+        // The user object should now have the correct ID from the signIn callback
         token.id = user.id;
+        console.log("[JWT] Setting token ID:", token.id, "from user object");
         token.username = user.username;
         token.email = user.email;
         token.membership = user.membership ?? false;
@@ -99,11 +102,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       await connectDB();
 
+      console.log("[Session] Looking for user with token.email:", token.email, "token.sub:", token.sub, "token.id:", token.id);
+
       const user = await WalkUser.findOne({
         $or: [{ email: token.email }, { oauthId: token.sub }],
       });
 
       if (user) {
+        console.log("[Session] Found user:", user._id.toString(), "Token ID:", token.id);
         session.user.id = user._id.toString();
         session.user.username = user.username;
         session.user.email = user.email;
@@ -122,9 +128,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.hasAccess = user.hasAccess;
         session.user.lastUsernameChange = user.lastUsernameChange;
         session.user.isUsernameChangeBlocked = user.isUsernameChangeBlocked;
-        session.accessToken = token.accessToken as string;
+      } else {
+        console.log("[Session] No user found in database");
       }
-
+      
+      
+      session.accessToken = token.accessToken as string;
+      
       return session;
     },
 

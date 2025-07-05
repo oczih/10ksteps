@@ -33,7 +33,6 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  console.log("user:",session?.user)
   useEffect(() => {
     if (!isLoading && session?.user) {
       if (session.user.hasAccess) {

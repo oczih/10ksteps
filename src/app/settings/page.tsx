@@ -35,7 +35,7 @@ export default function Settings() {
         const fetchUser = async () => { 
             if (session?.user?.id) {
                 try {
-                    const fetchedUser = await userservice.get(session.user.id);
+                    const fetchedUser = await userservice.get(session.user.id, session.accessToken);
                     setName(fetchedUser.user.name || '');
                     setEmail(fetchedUser.user.email || '');
                     setAge(fetchedUser.user.age || 25);
@@ -77,7 +77,7 @@ export default function Settings() {
     useEffect(() => {
         const fetchRoutes = async () => {
             if (user) {
-                const fetchedRoutes: WalkRoute[] = await getUserRoutes(user);
+                const fetchedRoutes: WalkRoute[] = await getUserRoutes(user, session?.accessToken);
 
                 setRoutes(fetchedRoutes);
             }
