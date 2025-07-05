@@ -1139,17 +1139,17 @@ useEffect(() => {
   }
 
   return (
-    <div className="min-h-screen bg-base-200 p-2 sm:p-6">
+    <div className="min-h-screen bg-[#232b39] p-2 sm:p-6">
       <div className="max-w-10xl mx-auto space-y-4 sm:space-y-6">
-        <div className="card bg-base-100 shadow-xl">
+        <div className="card bg-[#2d3748] shadow-xl border border-[#4a5568]">
           <div className="card-body p-4 sm:p-6">
             <div className="flex items-center mb-2">
-              <FaMap className="text-2xl sm:text-4xl text-primary mr-2 sm:mr-3" />
-              <h1 className="text-2xl sm:text-4xl font-bold text-base-content">Map</h1>
+              <FaMap className="text-2xl sm:text-4xl text-yellow-400 mr-2 sm:mr-3" />
+              <h1 className="text-2xl sm:text-4xl font-bold text-white">Map</h1>
             </div>
             
             {/* Mobile-friendly alert */}
-            <div className="alert alert-info mb-4">
+            <div className="alert bg-[#374151] border-[#4a5568] text-white mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-4 h-4 sm:w-6 sm:h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
@@ -1164,20 +1164,20 @@ useEffect(() => {
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                 <div className="form-control">
                   <label className="label cursor-pointer gap-2">
-                    <span className="label-text text-xs sm:text-sm flex items-center">
-                      <span className={`badge badge-xs sm:badge-sm ${useExactWaypoints ? 'badge-primary' : 'badge-secondary'} mr-2`}>
+                    <span className="label-text text-xs sm:text-sm flex items-center text-white">
+                      <span className={`badge badge-xs sm:badge-sm ${useExactWaypoints ? 'bg-yellow-400 text-gray-900' : 'bg-gray-600 text-white'} mr-2`}>
                         {useExactWaypoints ? 'AI Path' : 'Optimized'}
                       </span>
                       Exact Waypoints
                     </span>
                     <input 
                       type="checkbox" 
-                      className="toggle toggle-primary toggle-sm sm:toggle-md" 
+                      className="toggle toggle-warning toggle-sm sm:toggle-md" 
                       checked={useExactWaypoints}
                       onChange={(e) => setUseExactWaypoints(e.target.checked)}
                     />
                   </label>
-                  <div className="text-xs text-gray-500 max-w-xs hidden sm:block">
+                  <div className="text-xs text-gray-400 max-w-xs hidden sm:block">
                     {useExactWaypoints 
                       ? 'Follow the exact path suggested by AI (more accurate step count)' 
                       : 'Use Mapbox\'s shortest route between points'
@@ -1186,7 +1186,7 @@ useEffect(() => {
                 </div>
 
                 <select 
-                  className="select select-bordered select-sm sm:select-md w-full sm:w-auto max-w-xs text-xs sm:text-sm"
+                  className="select select-bordered select-sm sm:select-md w-full sm:w-auto max-w-xs text-xs sm:text-sm bg-[#374151] text-white border-[#4a5568] focus:border-yellow-400"
                   value={selectedRoute}
                   onChange={(e) => handleRouteSelect(e.target.value)}
                 >
@@ -1202,7 +1202,7 @@ useEffect(() => {
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2">
                 <button 
-                  className="btn btn-error btn-outline btn-sm sm:btn-md" 
+                  className="btn btn-error btn-outline btn-sm sm:btn-md border-red-500 text-red-500 hover:bg-red-500 hover:text-white" 
                   onClick={handleClearMap}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -1213,7 +1213,7 @@ useEffect(() => {
                 </button>
 
                 <button 
-                  className={`btn btn-primary btn-outline btn-sm sm:btn-md ${isLoadingLocation ? 'loading' : ''}`}
+                  className={`btn bg-yellow-400 hover:bg-yellow-500 text-gray-900 btn-sm sm:btn-md border-none ${isLoadingLocation ? 'loading' : ''}`}
                   onClick={getCurrentLocation}
                   disabled={isLoadingLocation}
                 >
@@ -1241,7 +1241,7 @@ useEffect(() => {
                   <form className="flex gap-2 relative" onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
                     <div className="relative flex-1">
                       <input 
-                        className="flex h-8 sm:h-10 rounded-md border border-input bg-background/90 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm text-base-300 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full pr-8" 
+                        className="flex h-8 sm:h-10 rounded-md border border-[#4a5568] bg-[#374151]/90 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm text-white ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full pr-8" 
                         placeholder="Search for a location..." 
                         type="text" 
                         value={searchQuery}
@@ -1275,7 +1275,7 @@ useEffect(() => {
                       )}
                     </div>
                     <button 
-                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-xs sm:text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-3 sm:[&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-8 sm:h-10 w-8 sm:w-10" 
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-xs sm:text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-3 sm:[&_svg]:size-4 [&_svg]:shrink-0 bg-yellow-400 text-gray-900 hover:bg-yellow-500 h-8 sm:h-10 w-8 sm:w-10" 
                       type="button"
                       onClick={handleSearch}
                       disabled={isSearching}
@@ -1299,7 +1299,7 @@ useEffect(() => {
                 
                 {editingmode && coordinates.length >= 2 && (
                   <button 
-                    className="btn btn-primary btn-sm sm:btn-md z-10 absolute bottom-2 sm:bottom-4 left-2 sm:left-4"
+                    className="btn bg-yellow-400 hover:bg-yellow-500 text-gray-900 btn-sm sm:btn-md z-10 absolute bottom-2 sm:bottom-4 left-2 sm:left-4 border-none"
                     onClick={handleAlignToRoad}
                   >
                     <BsStars className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1313,47 +1313,47 @@ useEffect(() => {
               <div className="w-full lg:max-w-96 lg:flex-1 space-y-4 sm:space-y-6">
                 {/* Stats Section */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                  <div className="stats shadow hover:bg-base-200 transition duration-100">
+                  <div className="stats shadow bg-[#374151] hover:bg-[#4a5568] transition duration-100 border border-[#4a5568]">
                     <div className="stat p-2 sm:p-4">
-                      <div className="stat-title text-xs sm:text-sm">Steps</div>
-                      <div className="stat-value text-primary text-lg sm:text-2xl">{steps ? steps.toLocaleString() : '0'}</div>
+                      <div className="stat-title text-xs sm:text-sm text-gray-300">Steps</div>
+                      <div className="stat-value text-blue-400 text-lg sm:text-2xl">{steps ? steps.toLocaleString() : '0'}</div>
                     </div>
                   </div>
 
-                  <div className="stats shadow hover:drop-shadow-xl hover:bg-base-200 transition duration-100">
+                  <div className="stats shadow bg-[#374151] hover:bg-[#4a5568] transition duration-100 border border-[#4a5568]">
                     <div className="stat p-2 sm:p-4">
-                      <div className="stat-title text-xs sm:text-sm">Walking Time</div>
-                      <div className="stat-value text-secondary text-lg sm:text-2xl">{time ? `~${time} min` : '0 min'}</div>
+                      <div className="stat-title text-xs sm:text-sm text-gray-300">Walking Time</div>
+                      <div className="stat-value text-green-400 text-lg sm:text-2xl">{time ? `~${time} min` : '0 min'}</div>
                     </div>
                   </div>
 
-                  <div className="stats shadow hover:bg-base-200 transition duration-100">
+                  <div className="stats shadow bg-[#374151] hover:bg-[#4a5568] transition duration-100 border border-[#4a5568]">
                     <div className="stat p-2 sm:p-4">
-                      <div className="stat-title text-xs sm:text-sm">Distance</div>
-                      <div className="stat-value text-accent text-lg sm:text-2xl">{distance ? `${distance} km` : '0 km'}</div>
+                      <div className="stat-title text-xs sm:text-sm text-gray-300">Distance</div>
+                      <div className="stat-value text-yellow-400 text-lg sm:text-2xl">{distance ? `${distance} km` : '0 km'}</div>
                     </div>
                   </div>
 
-                  <div className="stats shadow hover:bg-base-200 transition duration-100">
+                  <div className="stats shadow bg-[#374151] hover:bg-[#4a5568] transition duration-100 border border-[#4a5568]">
                     <div className="stat p-2 sm:p-4">
-                      <div className="stat-title text-xs sm:text-sm">Calories</div>
-                      <div className="stat-value text-info text-lg sm:text-2xl">{calories ? calories.toLocaleString() : '0'}</div>
+                      <div className="stat-title text-xs sm:text-sm text-gray-300">Calories</div>
+                      <div className="stat-value text-purple-400 text-lg sm:text-2xl">{calories ? calories.toLocaleString() : '0'}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Save Route Form */}
-                <div className="card bg-base-200 shadow-lg">
+                <div className="card bg-[#374151] shadow-lg border border-[#4a5568]">
                   <div className="card-body p-3 sm:p-4">
-                    <h3 className="card-title text-base sm:text-lg font-semibold mb-3 sm:mb-4">Save Your Route</h3>
+                    <h3 className="card-title text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-white">Save Your Route</h3>
                     <form onSubmit={(e) => { e.preventDefault(); handleSaveRoute(); }} className="space-y-3 sm:space-y-4">
                       <div className="form-control">
                         <label className="label">
-                          <span className="label-text font-medium text-xs sm:text-sm">Route Name</span>
+                          <span className="label-text font-medium text-xs sm:text-sm text-white">Route Name</span>
                         </label>
                         <input 
                           type="text" 
-                          className="input input-bordered w-full input-sm sm:input-md text-xs sm:text-sm" 
+                          className="input input-bordered w-full input-sm sm:input-md text-xs sm:text-sm bg-[#2d3748] text-white border-[#4a5568] focus:border-yellow-400" 
                           placeholder="My Route" 
                           value={routeName} 
                           onChange={(e) => setRouteName(e.target.value)} 
@@ -1362,11 +1362,11 @@ useEffect(() => {
                       
                       <div className="form-control">
                         <label className="label">
-                          <span className="label-text font-medium text-xs sm:text-sm">Route Description</span>
+                          <span className="label-text font-medium text-xs sm:text-sm text-white">Route Description</span>
                         </label>
                         <input 
                           type="text" 
-                          className="input input-bordered w-full input-sm sm:input-md text-xs sm:text-sm" 
+                          className="input input-bordered w-full input-sm sm:input-md text-xs sm:text-sm bg-[#2d3748] text-white border-[#4a5568] focus:border-yellow-400" 
                           placeholder="Walk around the city" 
                           value={routeDescription} 
                           onChange={(e) => setRouteDescription(e.target.value)} 
@@ -1374,7 +1374,7 @@ useEffect(() => {
                       </div>
                       
                       <button 
-                        className="btn btn-primary btn-sm sm:btn-md gap-2 w-full" 
+                        className="btn bg-yellow-400 hover:bg-yellow-500 text-gray-900 btn-sm sm:btn-md gap-2 w-full border-none" 
                         type="submit"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1387,9 +1387,9 @@ useEffect(() => {
                 </div>
 
                 {/* Pace Settings */}
-                <div className="card bg-base-200 shadow-lg">
+                <div className="card bg-[#374151] shadow-lg border border-[#4a5568]">
                   <div className="card-body p-3 sm:p-4">
-                    <h3 className="card-title text-base sm:text-lg font-semibold mb-3 sm:mb-4">Walking Pace</h3>
+                    <h3 className="card-title text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-white">Walking Pace</h3>
                     <ChangePace handleSliderChange={handleSliderChange} handlePaceChange={handlePaceChange} pace={pace} />
                   </div>
                 </div>
@@ -1398,7 +1398,7 @@ useEffect(() => {
                 <div className="flex items-center gap-4">
                   <div className="form-control">
                     <label className="label cursor-pointer gap-2">
-                      <span className="label-text text-xs sm:text-sm">Free Drawing Mode</span>
+                      <span className="label-text text-xs sm:text-sm text-white">Free Drawing Mode</span>
                       <IOSSwitch checked={editingmode} onChange={handleEditingMode} />
                     </label>
                   </div>
