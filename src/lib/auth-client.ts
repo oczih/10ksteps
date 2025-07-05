@@ -88,7 +88,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async jwt({ token, user, account }) {
-     
+      console.log("[JWT] Callback triggered with:", { 
+        hasUser: !!user, 
+        hasAccount: !!account, 
+        currentTokenId: token.id,
+        currentTokenEmail: token.email 
+      });
     
       if (account) {
         token.accessToken = account.access_token;
@@ -101,13 +106,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.username = user.username;
         token.email = user.email;
         token.membership = user.membership ?? false;
+      } else {
+        // Preserve existing token data when no user object is provided
+        console.log("[JWT] No user object, preserving existing token ID:", token.id);
       }
     
       return token;
     },
 
     async session({ session, token }) {
-      if (!token?.email && !token?.sub) return session;
+      console.log("[Session] Callback triggered with token:", { 
+        hasEmail: !!token?.email, 
+        hasSub: !!token?.sub, 
+        tokenId: token?.id,
+        tokenEmail: token?.email 
+      });
+      
+      if (!token?.email && !token?.sub) {
+        console.log("[Session] No email or sub in token, returning session as is");
+        return session;
+      }
 
       try {
         await connectDB();
