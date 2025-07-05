@@ -8,7 +8,14 @@ import { getToken } from '@auth/core/jwt';
 const secret = process.env.NEXTAUTH_SECRET;
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  await connectDB();
+  
   const token = await getToken({ req: request, secret });
+
+  if (!token) {
+    console.log("[API] No token found - Unauthorized");
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
 
   const { id } = await params;
 
@@ -17,8 +24,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     console.log("[API] Token mismatch - Forbidden");
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
-
-  await connectDB();
 
   if (!id || id === "undefined" || !mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'Valid MongoDB ObjectId is required' }, { status: 400 });

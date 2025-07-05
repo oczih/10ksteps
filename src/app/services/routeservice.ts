@@ -2,17 +2,15 @@
 import axios from 'axios';
 import { WalkRouteEntry, WalkRoute } from '@/types';
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/walkingroutes`;
-const API_URL_USER = `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
+const API_URL = `/api/walkingroutes`;
+const API_URL_USER = `/api/users`;
 
 export const create = async (
-  routeData: WalkRouteEntry,
-  accessToken?: string
+  routeData: WalkRouteEntry
 ): Promise<WalkRoute> => {
   try {
     const response = await axios.post(API_URL, routeData, {
       headers: {
-        Authorization: `Bearer ${accessToken || ''}`,
         'Content-Type': 'application/json',
       },
     });
@@ -25,8 +23,7 @@ export const create = async (
 };
 
 export const getUserRoutes = async (
-  user: { _id?: string; id?: string },
-  accessToken?: string
+  user: { _id?: string; id?: string }
 ): Promise<WalkRoute[]> => {
   try {
     const userId = user?._id || user?.id;
@@ -34,7 +31,6 @@ export const getUserRoutes = async (
 
     const response = await axios.get(`${API_URL_USER}/${userId}`, {
       headers: {
-        Authorization: `Bearer ${accessToken || ''}`,
         'Content-Type': 'application/json',
       },
     });

@@ -1,16 +1,15 @@
 import axios from 'axios';
 import { User } from '@/types';
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
+const API_URL = `/api/users`;
 
 /**
- * Get a user by ID, passing access token from client
+ * Get a user by ID
  */
-const get = async (id: string, accessToken?: string): Promise<{ user: User }> => {
+const get = async (id: string): Promise<{ user: User }> => {
   try {
     const response = await axios.get(`${API_URL}/${id}`, {
       headers: {
-        Authorization: `Bearer ${accessToken || ''}`,
         'Content-Type': 'application/json',
       },
     });
@@ -26,13 +25,11 @@ const get = async (id: string, accessToken?: string): Promise<{ user: User }> =>
  */
 const update = async (
   id: string,
-  newData: Partial<User>,
-  accessToken?: string
+  newData: Partial<User>
 ): Promise<{ user: User }> => {
   try {
     const response = await axios.put(`${API_URL}/${id}`, newData, {
       headers: {
-        Authorization: `Bearer ${accessToken || ''}`,
         'Content-Type': 'application/json',
       },
     });
@@ -43,9 +40,7 @@ const update = async (
   }
 };
 
-const userservice = {
+export default {
   get,
   update,
 };
-
-export default userservice;

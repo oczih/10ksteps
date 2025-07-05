@@ -35,7 +35,7 @@ export default function Settings() {
         const fetchUser = async () => { 
             if (session?.user?.id) {
                 try {
-                    const fetchedUser = await userservice.get(session.user.id, session.accessToken);
+                    const fetchedUser = await userservice.get(session.user.id);
                     setName(fetchedUser.user.name || '');
                     setEmail(fetchedUser.user.email || '');
                     setAge(fetchedUser.user.age || 25);
@@ -53,7 +53,7 @@ export default function Settings() {
             }
         }
         fetchUser();
-    }, [session?.user?.id, session?.accessToken]);
+    }, [session?.user?.id]);
 
     useEffect(() => {
         if (session?.user?.isUsernameChangeBlocked) {
@@ -77,13 +77,13 @@ export default function Settings() {
     useEffect(() => {
         const fetchRoutes = async () => {
             if (user) {
-                const fetchedRoutes: WalkRoute[] = await getUserRoutes(user, session?.accessToken);
+                const fetchedRoutes: WalkRoute[] = await getUserRoutes(user);
 
                 setRoutes(fetchedRoutes);
             }
         };
         fetchRoutes();
-    }, [user, session?.accessToken]);
+    }, [user]);
 
 
     const stridelength =Math.round(height*(gender === 'male' ? 0.415 : 0.413));

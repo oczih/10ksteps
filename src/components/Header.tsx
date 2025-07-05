@@ -36,7 +36,7 @@ export const Header = ({
     const fetchUser = async () => {
       if (session?.user?.id && !user) {
         try {
-          const userData = await userservice.get(session.user.id, session.accessToken);
+          const userData = await userservice.get(session.user.id);
           setUser(userData.user);
         } catch (error) {
           console.error('Error fetching user in Header:', error);
@@ -45,7 +45,7 @@ export const Header = ({
       }
     }
     fetchUser();
-  }, [session?.user?.id, setUser, user, session?.accessToken]);
+  }, [session?.user?.id, setUser, user]);
   const handleSignOut = async () => {
     await signOut({ redirect: false });
     setUser(null);
