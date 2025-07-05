@@ -1,2 +1,234 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  /* Improve touch targets */
+  button, 
+  input[type="button"], 
+  input[type="submit"], 
+  input[type="reset"],
+  select,
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Better scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent zoom on input focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Improve map touch interactions */
+  .mapboxgl-canvas {
+    touch-action: manipulation;
+  }
+
+  /* Better mobile navigation */
+  .navbar {
+    padding: 0.5rem;
+  }
+
+  /* Mobile-friendly cards */
+  .card {
+    margin: 0.5rem;
+  }
+
+  /* Improve mobile form spacing */
+  .form-control {
+    margin-bottom: 1rem;
+  }
+
+  /* Better mobile button spacing */
+  .btn + .btn {
+    margin-left: 0.5rem;
+  }
+
+  /* Mobile-optimized stats */
+  .stats {
+    padding: 0.5rem;
+  }
+
+  .stat {
+    padding: 0.5rem;
+  }
+
+  .stat-title {
+    font-size: 0.75rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+}
+
+/* Tablet improvements */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .stat-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Better mobile loading states */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Mobile-friendly focus states */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid hsl(var(--p));
+  outline-offset: 2px;
+}
+
+/* Improve mobile modal experience */
+.modal {
+  padding: 1rem;
+}
+
+.modal-box {
+  margin: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+/* Better mobile toast positioning */
+.toast {
+  margin: 0.5rem;
+}
+
+/* Mobile-optimized dropdowns */
+.dropdown-content {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Improve mobile map controls */
+.mapboxgl-ctrl-group {
+  border-radius: 8px;
+}
+
+.mapboxgl-ctrl-group button {
+  width: 44px;
+  height: 44px;
+}
+
+/* Better mobile form validation */
+.input-error {
+  border-color: hsl(var(--er));
+}
+
+.input-error:focus {
+  border-color: hsl(var(--er));
+  box-shadow: 0 0 0 2px hsl(var(--er) / 0.2);
+}
+
+/* Mobile-friendly alerts */
+.alert {
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+}
+
+/* Improve mobile navigation menu */
+.mobile-menu {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Better mobile search suggestions */
+.search-suggestions {
+  max-height: 200px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile-optimized sliders */
+.MuiSlider-root {
+  padding: 8px 0;
+}
+
+.MuiSlider-thumb {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Improve mobile button groups */
+.btn-group {
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+/* Better mobile spacing */
+.space-y-4 > * + * {
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .space-y-4 > * + * {
+    margin-top: 0.75rem;
+  }
+}
+
+/* Mobile-friendly grid layouts */
+.grid {
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    gap: 1rem;
+  }
+}
+
+/* Improve mobile text readability */
+@media (max-width: 768px) {
+  .text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+}
+
+/* Better mobile shadows */
+@media (max-width: 768px) {
+  .shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .shadow-xl {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+}

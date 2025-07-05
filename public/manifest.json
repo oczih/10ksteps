@@ -1,0 +1,21 @@
+{
+  "name": "10k Steps",
+  "short_name": "10k Steps",
+  "description": "Track your daily walks, set goals, and explore new routes. Make every step count!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1c232b",
+  "theme_color": "#1c232b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/next.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "fitness", "lifestyle"],
+  "lang": "en",
+  "scope": "/"
+} 

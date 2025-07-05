@@ -4,13 +4,12 @@ import { connectDB } from '@/lib/mongoose';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import WalkRoute from '@/app/models/walkroutemodel';
 import WalkUser from '@/app/models/usermodel';
-import { getToken } from '@auth/core/jwt';
-const secret = process.env.NEXTAUTH_SECRET;
-export async function GET(request: Request) {
+import { auth } from '@/lib/auth-client';
+export async function GET() {
   await connectDB();
   
-  const token = await getToken({ req: request, secret });
-  if (!token || token.role !== 'admin') {
+  const session = await auth();
+  if (!session) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
   try {

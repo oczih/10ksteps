@@ -14,6 +14,7 @@ import userservice from '@/app/services/userservice';
 import Input from '@mui/material/Input';
 import { FaUser, FaDumbbell, FaRoute, FaCog } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
+
 export default function Settings() {
     const router = useRouter();
     const { user, setUser } = useUser();
@@ -31,6 +32,7 @@ export default function Settings() {
     const [gender, setGender] = useState<string>('male');
     const [username, setUsername] = useState<string>('');
     const [isUsernameChangeBlocked, setIsUsernameChangeBlocked] = useState(false);
+
     useEffect(() => {
         const fetchUser = async () => { 
             if (session?.user?.id) {
@@ -44,6 +46,7 @@ export default function Settings() {
                     setPace(fetchedUser.user.pace || 5);
                     setActivityLevel(fetchedUser.user.activityLevel || '');
                     setGender(fetchedUser.user.gender || 'male');
+                    setUsername(fetchedUser.user.username || '');
                 } catch (error) {
                     console.error('Error fetching user:', error);
                     toast.error('Error fetching user');
@@ -74,19 +77,19 @@ export default function Settings() {
             setIsUsernameChangeBlocked(false);
         }
     }, [session?.user?.id, session?.user?.lastUsernameChange]);
+
     useEffect(() => {
         const fetchRoutes = async () => {
             if (user) {
                 const fetchedRoutes: WalkRoute[] = await getUserRoutes(user);
-
                 setRoutes(fetchedRoutes);
             }
         };
         fetchRoutes();
     }, [user]);
 
-
-    const stridelength =Math.round(height*(gender === 'male' ? 0.415 : 0.413));
+    const stridelength = Math.round(height * (gender === 'male' ? 0.415 : 0.413));
+    
     const handleViewRoute = (route: WalkRoute) => {
         localStorage.setItem('selectedRoute', JSON.stringify(route));
         router.push('/map');
@@ -106,9 +109,9 @@ export default function Settings() {
             await userservice.update(session?.user?.id ?? '', {weight: value as number});
         } catch (error) {
             console.error('Error updating weight:', error);
-            
         }
     };
+
     const handleActivityLevelChange = async(event: React.ChangeEvent<HTMLSelectElement>) => {
         setActivityLevel(event.target.value);
         try {
@@ -117,7 +120,6 @@ export default function Settings() {
             console.error('Error updating activity level:', error);
         }
     }
-
 
     const handleHeightChange = async(event: Event, value: number | number[]) => {
         setHeight(value as number);
@@ -190,6 +192,7 @@ export default function Settings() {
             setAge(120);
         }
     };
+
     const handleUserNameChange = async(event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (isUsernameChangeBlocked) {
@@ -204,6 +207,7 @@ export default function Settings() {
             toast.error('Error updating username');
         }
     }
+
     if (!session?.user && !isLoading) {
         return (
             <div className="min-h-screen bg-base-200 flex items-center justify-center">
@@ -214,6 +218,7 @@ export default function Settings() {
             </div>
         );
     }
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-base-200">
@@ -225,76 +230,77 @@ export default function Settings() {
         );
     }
 
-    
     return (
         <div className="min-h-screen bg-base-200">
             <ToastContainer />
             <Header user={user} setUser={setUser} />
             
-            <div className="container mx-auto px-4 py-8">
-                <div className="flex items-center justify-center mb-8">
-                    <FaCog className="text-4xl text-primary mr-3" />
-                    <h1 className="text-4xl font-bold text-base-content">Settings</h1>
+            <div className="container mx-auto px-4 py-4 sm:py-8">
+                <div className="flex items-center justify-center mb-6 sm:mb-8">
+                    <FaCog className="text-3xl sm:text-4xl text-primary mr-2 sm:mr-3" />
+                    <h1 className="text-3xl sm:text-4xl font-bold text-base-content">Settings</h1>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-6xl mx-auto">
                     {/* Personal Information Card */}
                     <div className="card bg-base-100 shadow-xl">
-                        <div className="card-body">
-                            <div className="flex items-center mb-6">
-                                <FaUser className="text-2xl text-primary mr-3" />
-                                <h2 className="card-title text-2xl font-bold text-base-content">
+                        <div className="card-body p-4 sm:p-6">
+                            <div className="flex items-center mb-4 sm:mb-6">
+                                <FaUser className="text-xl sm:text-2xl text-primary mr-2 sm:mr-3" />
+                                <h2 className="card-title text-xl sm:text-2xl font-bold text-base-content">
                                     Personal Information
                                 </h2>
                             </div>
                             
                             <div className="space-y-4">
-                                <div className="bg-base-200 p-4 rounded-lg">
+                                <div className="bg-base-200 p-3 sm:p-4 rounded-lg">
                                     <div className="text-sm text-base-content/70 mb-1">
                                         Name
                                     </div>
-                                    <div className="text-lg font-semibold text-base-content">
+                                    <div className="text-base sm:text-lg font-semibold text-base-content">
                                         {name}
                                     </div>
                                 </div>
+                                
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium mb-1">Username</label>
                                     {isUsernameChangeBlocked && (
-                                        <div className="text-red-500 text-sm mb-1">
+                                        <div className="text-red-500 text-xs sm:text-sm mb-1">
                                             You can only change your username once every 7 days.
                                         </div>
                                     )}
-                                    <form onSubmit={handleUserNameChange} className='flex items-center gap-2'>
+                                    <form onSubmit={handleUserNameChange} className='flex flex-col sm:flex-row items-stretch sm:items-center gap-2'>
                                         <input
                                             disabled={isUsernameChangeBlocked}
                                             type="text"
                                             value={username}
                                             onChange={(e) => setUsername(e.target.value)}
-                                            className='input input-bordered w-full bg-base-100 text-base-content'
+                                            className='input input-bordered w-full bg-base-100 text-base-content text-sm sm:text-base'
                                         />
                                         <button
                                             type="submit"
-                                            className='btn btn-primary'
+                                            className='btn btn-primary text-sm sm:text-base px-4 py-2'
                                         >
                                             Save
                                         </button>
                                     </form>
                                 </div>
-                                <div className="bg-base-200 p-4 rounded-lg">
+                                
+                                <div className="bg-base-200 p-3 sm:p-4 rounded-lg">
                                     <div className="text-sm text-base-content/70 mb-1">
                                         Email
                                     </div>
-                                    <div className="text-lg font-semibold text-base-content">
+                                    <div className="text-base sm:text-lg font-semibold text-base-content">
                                         {email}
                                     </div>
                                 </div>
                                 
-                                <div className="bg-base-200 p-4 rounded-lg">
+                                <div className="bg-base-200 p-3 sm:p-4 rounded-lg">
                                     <div className="text-sm text-base-content/70 mb-1">
                                         Activity Level
                                     </div>
                                     <select 
-                                        className="select select-bordered w-full bg-base-100 text-base-content"
+                                        className="select select-bordered w-full bg-base-100 text-base-content text-sm sm:text-base"
                                         value={activityLevel}
                                         onChange={handleActivityLevelChange}
                                     >
@@ -303,15 +309,15 @@ export default function Settings() {
                                         <option value="moderately">Moderately Active</option>
                                         <option value="very">Very Active</option>
                                         <option value="extra">Extra Active</option>
-                                       
                                     </select>
                                 </div>
-                                <div className='bg-base-200 p-4 rounded-lg'>
+                                
+                                <div className='bg-base-200 p-3 sm:p-4 rounded-lg'>
                                     <div className='text-sm text-base-content/70 mb-1'>
                                         Gender
                                     </div>
                                     <select 
-                                        className="select select-bordered w-full bg-base-100 text-base-content"
+                                        className="select select-bordered w-full bg-base-100 text-base-content text-sm sm:text-base"
                                         value={gender}
                                         onChange={async (e) => {
                                             const newGender = e.target.value;
@@ -325,7 +331,6 @@ export default function Settings() {
                                     >
                                         <option value="male">Male</option>
                                         <option value="female">Female</option>
-                                       
                                     </select>
                                 </div>
                             </div>
@@ -334,21 +339,25 @@ export default function Settings() {
 
                     {/* Physical Metrics Card */}
                     <div className="card bg-base-100 shadow-xl">
-                        <div className="card-body">
-                            <div className="flex items-center mb-6">
-                                <FaDumbbell className="text-2xl text-primary mr-3" />
-                                <h2 className="card-title text-2xl font-bold text-base-content">
-                                    Physical Metrics
-                                </h2>
-                                <h2 className='text-white ml-10'>Your current stride length is {stridelength} cm</h2>
+                        <div className="card-body p-4 sm:p-6">
+                            <div className="flex flex-col sm:flex-row sm:items-center mb-4 sm:mb-6">
+                                <div className="flex items-center mb-2 sm:mb-0">
+                                    <FaDumbbell className="text-xl sm:text-2xl text-primary mr-2 sm:mr-3" />
+                                    <h2 className="card-title text-xl sm:text-2xl font-bold text-base-content">
+                                        Physical Metrics
+                                    </h2>
+                                </div>
+                                <div className='text-white text-sm sm:text-base ml-0 sm:ml-10'>
+                                    Your current stride length is {stridelength} cm
+                                </div>
                             </div>
 
                             {/* Age Slider */}
                             <Box sx={{ mb: 4 }}>
-                                <div className="text-lg font-semibold text-white mb-2">
+                                <div className="text-base sm:text-lg font-semibold text-white mb-2">
                                     Age: {age} years
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     <Slider
                                         aria-label="Age"
                                         value={age}
@@ -358,7 +367,7 @@ export default function Settings() {
                                         min={13}
                                         max={120}
                                         sx={{ 
-                                            flex: 1,
+                                            width: '100%',
                                             '& .MuiSlider-track': {
                                                 backgroundColor: 'hsl(var(--p))',
                                             },
@@ -376,13 +385,15 @@ export default function Settings() {
                                         onChange={handleAgeInputChange}
                                         onBlur={handleAgeBlur}
                                         sx={{ 
-                                            width: 80,
+                                            width: '100%',
+                                            maxWidth: '120px',
                                             '& .MuiInputBase-input': {
                                                 textAlign: 'center',
                                                 color: 'white',
                                                 backgroundColor: 'hsl(var(--b2))',
                                                 borderRadius: '0.5rem',
-                                                border: '1px solid hsl(var(--bc) / 0.2)'
+                                                border: '1px solid hsl(var(--bc) / 0.2)',
+                                                fontSize: '0.875rem'
                                             }
                                         }}
                                         inputProps={{
@@ -398,20 +409,20 @@ export default function Settings() {
 
                             {/* Weight Slider */}
                             <Box sx={{ mb: 4 }}>
-                                <div className="text-lg font-semibold text-white mb-2">
+                                <div className="text-base sm:text-lg font-semibold text-white mb-2">
                                     Weight: {weight} kg
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     <Slider
                                         aria-label="Weight"
                                         value={weight}
                                         onChange={handleWeightChange}
                                         valueLabelDisplay="off"
-                                        step={0.1}
+                                        step={1}
                                         min={30}
                                         max={300}
                                         sx={{ 
-                                            flex: 1,
+                                            width: '100%',
                                             '& .MuiSlider-track': {
                                                 backgroundColor: 'hsl(var(--p))',
                                             },
@@ -429,17 +440,19 @@ export default function Settings() {
                                         onChange={handleWeightInputChange}
                                         onBlur={handleWeightBlur}
                                         sx={{ 
-                                            width: 80,
+                                            width: '100%',
+                                            maxWidth: '120px',
                                             '& .MuiInputBase-input': {
                                                 textAlign: 'center',
                                                 color: 'white',
                                                 backgroundColor: 'hsl(var(--b2))',
                                                 borderRadius: '0.5rem',
-                                                border: '1px solid hsl(var(--bc) / 0.2)'
+                                                border: '1px solid hsl(var(--bc) / 0.2)',
+                                                fontSize: '0.875rem'
                                             }
                                         }}
                                         inputProps={{
-                                            step: 0.1,
+                                            step: 1,
                                             min: 30,
                                             max: 300,
                                             type: 'number',
@@ -451,10 +464,10 @@ export default function Settings() {
 
                             {/* Height Slider */}
                             <Box sx={{ mb: 4 }}>
-                                <div className="text-lg font-semibold text-white mb-2">
+                                <div className="text-base sm:text-lg font-semibold text-white mb-2">
                                     Height: {height} cm
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     <Slider
                                         aria-label="Height"
                                         value={height}
@@ -464,7 +477,7 @@ export default function Settings() {
                                         min={100}
                                         max={250}
                                         sx={{ 
-                                            flex: 1,
+                                            width: '100%',
                                             '& .MuiSlider-track': {
                                                 backgroundColor: 'hsl(var(--p))',
                                             },
@@ -482,13 +495,15 @@ export default function Settings() {
                                         onChange={handleHeightInputChange}
                                         onBlur={handleHeightBlur}
                                         sx={{ 
-                                            width: 80,
+                                            width: '100%',
+                                            maxWidth: '120px',
                                             '& .MuiInputBase-input': {
                                                 textAlign: 'center',
                                                 color: 'white',
                                                 backgroundColor: 'hsl(var(--b2))',
                                                 borderRadius: '0.5rem',
-                                                border: '1px solid hsl(var(--bc) / 0.2)'
+                                                border: '1px solid hsl(var(--bc) / 0.2)',
+                                                fontSize: '0.875rem'
                                             }
                                         }}
                                         inputProps={{
@@ -502,9 +517,9 @@ export default function Settings() {
                                 </div>
                             </Box>
 
-                            {/* Pace Setting */}
-                            <div className="bg-base-200 p-4 rounded-lg">
-                                <div className="text-sm text-base-content/70 mb-2">
+                            {/* Pace Settings */}
+                            <div className="mb-4">
+                                <div className="text-base sm:text-lg font-semibold text-white mb-2">
                                     Walking Pace
                                 </div>
                                 <ChangePace 
@@ -517,82 +532,47 @@ export default function Settings() {
                     </div>
                 </div>
 
-                {/* Routes Section */}
-                <div className="mt-12 max-w-6xl mx-auto">
-                    <div className="flex items-center mb-6">
-                        <FaRoute className="text-2xl text-primary mr-3" />
-                        <h2 className="text-2xl font-bold text-base-content">
-                            Your Walking Routes
-                        </h2>
-                    </div>
-                    
-                    {routes.length === 0 ? (
-                        <div className="card bg-base-100 shadow-xl">
-                            <div className="card-body text-center py-12">
-                                <FaRoute className="text-6xl text-base-content/30 mx-auto mb-4" />
-                                <h3 className="text-xl font-semibold text-base-content mb-2">
-                                    No routes yet
-                                </h3>
-                                <p className="text-base-content/70">
-                                    Start walking to create your first route!
-                                </p>
+                {/* Routes Card */}
+                <div className="mt-6 sm:mt-8 max-w-6xl mx-auto">
+                    <div className="card bg-base-100 shadow-xl">
+                        <div className="card-body p-4 sm:p-6">
+                            <div className="flex items-center mb-4 sm:mb-6">
+                                <FaRoute className="text-xl sm:text-2xl text-primary mr-2 sm:mr-3" />
+                                <h2 className="card-title text-xl sm:text-2xl font-bold text-base-content">
+                                    Your Routes
+                                </h2>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {routes.map((route) => (
-                                <div key={route.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow duration-300">
-                                    <div className="card-body">
-                                        <h3 className="card-title text-lg font-bold text-base-content mb-4">
-                                            {route.routeName}
-                                        </h3>
-                                        
-                                        <div className="grid grid-cols-2 gap-4 mb-4">
-                                            <div className="text-center">
-                                                <div className="text-xl font-bold text-primary">
-                                                    {route.steps.toLocaleString()}
-                                                </div>
-                                                <div className="text-sm text-base-content/70">
-                                                    Steps
-                                                </div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-xl font-bold text-primary">
-                                                    {route.distance.toFixed(2)}
-                                                </div>
-                                                <div className="text-sm text-base-content/70">
-                                                    km
-                                                </div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-xl font-bold text-primary">
-                                                    {route.time}
-                                                </div>
-                                                <div className="text-sm text-base-content/70">
-                                                    min
-                                                </div>
-                                            </div>
-                                            <div className="text-center">
-                                                <div className="text-xl font-bold text-primary">
-                                                    {route.calories}
-                                                </div>
-                                                <div className="text-sm text-base-content/70">
-                                                    cal
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <button 
-                                            className="btn btn-primary w-full"
-                                            onClick={() => handleViewRoute(route)}
-                                        >
-                                            View Route
-                                        </button>
-                                    </div>
+                            
+                            {routes.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <p className="text-base-content/70 text-sm sm:text-base">No routes saved yet. Create your first route on the map!</p>
                                 </div>
-                            ))}
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {routes.map((route) => (
+                                        <div key={route.id} className="bg-base-200 p-3 sm:p-4 rounded-lg">
+                                            <h3 className="font-semibold text-base-content text-sm sm:text-base mb-2">
+                                                {route.routeName}
+                                            </h3>
+                                            <p className="text-base-content/70 text-xs sm:text-sm mb-2">
+                                                {route.routeDescription}
+                                            </p>
+                                            <div className="text-xs sm:text-sm text-base-content/60 mb-3">
+                                                <div>Distance: {(route.distance / 1000).toFixed(2)} km</div>
+                                                <div>Duration: {Math.round(route.time)} min</div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleViewRoute(route)}
+                                                className="btn btn-primary btn-sm w-full text-xs sm:text-sm"
+                                            >
+                                                View Route
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

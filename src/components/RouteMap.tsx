@@ -1139,37 +1139,45 @@ useEffect(() => {
   }
 
   return (
-    <div className="min-h-screen bg-base-200 p-6">
-      <div className="max-w-10xl mx-auto space-y-6">
+    <div className="min-h-screen bg-base-200 p-2 sm:p-6">
+      <div className="max-w-10xl mx-auto space-y-4 sm:space-y-6">
         <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
+          <div className="card-body p-4 sm:p-6">
             <div className="flex items-center mb-2">
-              <FaMap className="text-4xl text-primary mr-3" />
-              <h1 className="text-4xl font-bold text-base-content">Map</h1>
+              <FaMap className="text-2xl sm:text-4xl text-primary mr-2 sm:mr-3" />
+              <h1 className="text-2xl sm:text-4xl font-bold text-base-content">Map</h1>
             </div>
-            <div className="flex justify-between items-center mb-4">
-              <div className="alert alert-info flex-1 mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span>{editingmode ? 'Free drawing mode: Click to add markers, then align to road' : 'Click on the map to add waypoints, or use the AI chat to get route coordinates!'}</span>
-              </div>
-              
-              <div className="flex gap-2 items-center">
+            
+            {/* Mobile-friendly alert */}
+            <div className="alert alert-info mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-4 h-4 sm:w-6 sm:h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span className="text-xs sm:text-sm">
+                {editingmode ? 'Free drawing mode: Tap to add markers, then align to road' : 'Tap on the map to add waypoints, or use the AI chat to get route coordinates!'}
+              </span>
+            </div>
+            
+            {/* Mobile-optimized controls */}
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-4">
+              {/* Toggle and Route Selection */}
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                 <div className="form-control">
-                  <label className="label cursor-pointer">
-                    <span className="label-text mr-2 flex items-center">
-                      <span className={`badge ${useExactWaypoints ? 'badge-primary' : 'badge-secondary'} mr-2`}>
+                  <label className="label cursor-pointer gap-2">
+                    <span className="label-text text-xs sm:text-sm flex items-center">
+                      <span className={`badge badge-xs sm:badge-sm ${useExactWaypoints ? 'badge-primary' : 'badge-secondary'} mr-2`}>
                         {useExactWaypoints ? 'AI Path' : 'Optimized'}
                       </span>
                       Exact Waypoints
                     </span>
                     <input 
                       type="checkbox" 
-                      className="toggle toggle-primary" 
+                      className="toggle toggle-primary toggle-sm sm:toggle-md" 
                       checked={useExactWaypoints}
                       onChange={(e) => setUseExactWaypoints(e.target.checked)}
                     />
                   </label>
-                  <div className="text-xs text-gray-500 max-w-xs">
+                  <div className="text-xs text-gray-500 max-w-xs hidden sm:block">
                     {useExactWaypoints 
                       ? 'Follow the exact path suggested by AI (more accurate step count)' 
                       : 'Use Mapbox\'s shortest route between points'
@@ -1178,7 +1186,7 @@ useEffect(() => {
                 </div>
 
                 <select 
-                  className="select select-bordered w-full max-w-xs"
+                  className="select select-bordered select-sm sm:select-md w-full sm:w-auto max-w-xs text-xs sm:text-sm"
                   value={selectedRoute}
                   onChange={(e) => handleRouteSelect(e.target.value)}
                 >
@@ -1189,41 +1197,51 @@ useEffect(() => {
                     </option>
                   ))}
                 </select>
+              </div>
 
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-2">
                 <button 
-                  className="btn btn-error btn-outline" 
+                  className="btn btn-error btn-outline btn-sm sm:btn-md" 
                   onClick={handleClearMap}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
-                  Clear Map
+                  <span className="hidden sm:inline">Clear Map</span>
+                  <span className="sm:hidden">Clear</span>
                 </button>
 
                 <button 
-                  className={`btn btn-primary btn-outline ${isLoadingLocation ? 'loading' : ''}`}
+                  className={`btn btn-primary btn-outline btn-sm sm:btn-md ${isLoadingLocation ? 'loading' : ''}`}
                   onClick={getCurrentLocation}
                   disabled={isLoadingLocation}
                 >
                   {!isLoadingLocation && (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                     </svg>
                   )}
-                  {isLoadingLocation ? 'Getting Location...' : 'My Location'}
+                  <span className="hidden sm:inline">
+                    {isLoadingLocation ? 'Getting Location...' : 'My Location'}
+                  </span>
+                  <span className="sm:hidden">
+                    {isLoadingLocation ? '...' : 'Location'}
+                  </span>
                 </button>
               </div>
             </div>
 
-            <div className="flex gap-6">
-              {/* Left side - Map */}
+            {/* Mobile Layout */}
+            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+              {/* Map Section */}
               <div className="flex-1 relative">
                 {/* Search box overlay */}
-                <div className="absolute top-4 left-4 right-4 z-10 w-1/2 mx-auto">
+                <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-10">
                   <form className="flex gap-2 relative" onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
                     <div className="relative flex-1">
                       <input 
-                        className="flex h-10 rounded-md border border-input bg-background/90 backdrop-blur-sm px-3 py-2 text-base-300 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm w-full pr-8" 
+                        className="flex h-8 sm:h-10 rounded-md border border-input bg-background/90 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm text-base-300 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-full pr-8" 
                         placeholder="Search for a location..." 
                         type="text" 
                         value={searchQuery}
@@ -1232,22 +1250,22 @@ useEffect(() => {
                       />
                       {searchQuery && (
                         <button 
-                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground w-10 absolute right-0 top-0 h-full" 
+                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-xs sm:text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-3 sm:[&_svg]:size-4 [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground w-8 sm:w-10 absolute right-0 top-0 h-full" 
                           type="button"
                           onClick={clearSearch}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-4 w-4">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x h-3 w-3 sm:h-4 sm:w-4">
                             <path d="M18 6 6 18"></path>
                             <path d="m6 6 12 12"></path>
                           </svg>
                         </button>
                       )}
                       {showSuggestions && suggestions.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto z-50">
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-md shadow-lg max-h-40 sm:max-h-60 overflow-auto z-50">
                           {suggestions.map((suggestion, index) => (
                             <button
                               key={index}
-                              className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none text-sm text-gray-700"
+                              className="w-full text-left px-3 sm:px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none text-xs sm:text-sm text-gray-700"
                               onClick={() => handleSuggestionClick(suggestion)}
                             >
                               {suggestion.place_name}
@@ -1257,18 +1275,18 @@ useEffect(() => {
                       )}
                     </div>
                     <button 
-                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-10 w-10" 
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-xs sm:text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-3 sm:[&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-8 sm:h-10 w-8 sm:w-10" 
                       type="button"
                       onClick={handleSearch}
                       disabled={isSearching}
                     >
                       {isSearching ? (
-                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin h-3 w-3 sm:h-4 sm:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                       ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-search h-4 w-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-search h-3 w-3 sm:h-4 sm:w-4">
                           <circle cx="11" cy="11" r="8"></circle>
                           <path d="m21 21-4.3-4.3"></path>
                         </svg>
@@ -1276,62 +1294,66 @@ useEffect(() => {
                     </button>
                   </form>
                 </div>
-                <div ref={mapContainer} className="h-[700px] w-full rounded-xl overflow-hidden shadow-lg border-4 border-base-300" />
+                
+                <div ref={mapContainer} className="h-[400px] sm:h-[500px] lg:h-[700px] w-full rounded-xl overflow-hidden shadow-lg border-2 sm:border-4 border-base-300" />
+                
                 {editingmode && coordinates.length >= 2 && (
-                    <button 
-                      className="btn btn-primary z-10 absolute bottom-4 left-4"
-                      onClick={handleAlignToRoad}
-                    >
-                      <BsStars />Align to Road
-                    </button>
-                  )}
+                  <button 
+                    className="btn btn-primary btn-sm sm:btn-md z-10 absolute bottom-2 sm:bottom-4 left-2 sm:left-4"
+                    onClick={handleAlignToRoad}
+                  >
+                    <BsStars className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Align to Road</span>
+                    <span className="sm:hidden">Align</span>
+                  </button>
+                )}
               </div>
-              {/* Right side - Form and Stats */}
-              <div className="max-w-96 flex-1 space-y-6">
+              
+              {/* Stats and Form Section */}
+              <div className="w-full lg:max-w-96 lg:flex-1 space-y-4 sm:space-y-6">
                 {/* Stats Section */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2 sm:gap-4">
                   <div className="stats shadow hover:bg-base-200 transition duration-100">
-                    <div className="stat">
-                      <div className="stat-title">Steps</div>
-                      <div className="stat-value text-primary">{steps ? steps.toLocaleString() : '0'}</div>
+                    <div className="stat p-2 sm:p-4">
+                      <div className="stat-title text-xs sm:text-sm">Steps</div>
+                      <div className="stat-value text-primary text-lg sm:text-2xl">{steps ? steps.toLocaleString() : '0'}</div>
                     </div>
                   </div>
 
                   <div className="stats shadow hover:drop-shadow-xl hover:bg-base-200 transition duration-100">
-                    <div className="stat">
-                      <div className="stat-title">Walking Time</div>
-                      <div className="stat-value text-secondary">{time ? `~${time} min` : '0 min'}</div>
+                    <div className="stat p-2 sm:p-4">
+                      <div className="stat-title text-xs sm:text-sm">Walking Time</div>
+                      <div className="stat-value text-secondary text-lg sm:text-2xl">{time ? `~${time} min` : '0 min'}</div>
                     </div>
                   </div>
 
                   <div className="stats shadow hover:bg-base-200 transition duration-100">
-                    <div className="stat">
-                      <div className="stat-title">Distance</div>
-                      <div className="stat-value text-accent">{distance ? `${distance} km` : '0 km'}</div>
+                    <div className="stat p-2 sm:p-4">
+                      <div className="stat-title text-xs sm:text-sm">Distance</div>
+                      <div className="stat-value text-accent text-lg sm:text-2xl">{distance ? `${distance} km` : '0 km'}</div>
                     </div>
                   </div>
 
                   <div className="stats shadow hover:bg-base-200 transition duration-100">
-                    <div className="stat">
-                      <div className="stat-title">Calories</div>
-                      <div className="stat-value text-info">{calories ? calories.toLocaleString() : '0'}</div>
+                    <div className="stat p-2 sm:p-4">
+                      <div className="stat-title text-xs sm:text-sm">Calories</div>
+                      <div className="stat-value text-info text-lg sm:text-2xl">{calories ? calories.toLocaleString() : '0'}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Save Route Form */}
-                <ChangePace handleSliderChange={handleSliderChange} handlePaceChange={handlePaceChange} pace={pace} />
                 <div className="card bg-base-200 shadow-lg">
-                  <div className="card-body">
-                    <h3 className="card-title text-lg font-semibold mb-4">Save Your Route</h3>
-                    <form onSubmit={(e) => { e.preventDefault(); handleSaveRoute(); }} className="space-y-4">
+                  <div className="card-body p-3 sm:p-4">
+                    <h3 className="card-title text-base sm:text-lg font-semibold mb-3 sm:mb-4">Save Your Route</h3>
+                    <form onSubmit={(e) => { e.preventDefault(); handleSaveRoute(); }} className="space-y-3 sm:space-y-4">
                       <div className="form-control">
                         <label className="label">
-                          <span className="label-text font-medium">Route Name</span>
+                          <span className="label-text font-medium text-xs sm:text-sm">Route Name</span>
                         </label>
                         <input 
                           type="text" 
-                          className="input input-bordered w-full" 
+                          className="input input-bordered w-full input-sm sm:input-md text-xs sm:text-sm" 
                           placeholder="My Route" 
                           value={routeName} 
                           onChange={(e) => setRouteName(e.target.value)} 
@@ -1340,11 +1362,11 @@ useEffect(() => {
                       
                       <div className="form-control">
                         <label className="label">
-                          <span className="label-text font-medium">Route Description</span>
+                          <span className="label-text font-medium text-xs sm:text-sm">Route Description</span>
                         </label>
                         <input 
                           type="text" 
-                          className="input input-bordered w-full" 
+                          className="input input-bordered w-full input-sm sm:input-md text-xs sm:text-sm" 
                           placeholder="Walk around the city" 
                           value={routeDescription} 
                           onChange={(e) => setRouteDescription(e.target.value)} 
@@ -1352,21 +1374,31 @@ useEffect(() => {
                       </div>
                       
                       <button 
-                        className="btn btn-primary btn-lg gap-2 w-full" 
+                        className="btn btn-primary btn-sm sm:btn-md gap-2 w-full" 
                         type="submit"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                         </svg>
-                        Save Route
+                        <span className="text-xs sm:text-sm">Save Route</span>
                       </button>
                     </form>
                   </div>
                 </div>
+
+                {/* Pace Settings */}
+                <div className="card bg-base-200 shadow-lg">
+                  <div className="card-body p-3 sm:p-4">
+                    <h3 className="card-title text-base sm:text-lg font-semibold mb-3 sm:mb-4">Walking Pace</h3>
+                    <ChangePace handleSliderChange={handleSliderChange} handlePaceChange={handlePaceChange} pace={pace} />
+                  </div>
+                </div>
+
+                {/* Free Drawing Mode Toggle */}
                 <div className="flex items-center gap-4">
                   <div className="form-control">
                     <label className="label cursor-pointer gap-2">
-                      <span className="label-text">Free Drawing Mode</span>
+                      <span className="label-text text-xs sm:text-sm">Free Drawing Mode</span>
                       <IOSSwitch checked={editingmode} onChange={handleEditingMode} />
                     </label>
                   </div>

@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getGeminiResponse } from '@/lib/gemini';
-import { getToken } from '@auth/core/jwt';
-const secret = process.env.NEXTAUTH_SECRET;
+import { auth } from '@/lib/auth-client';
 export async function POST(req: Request) {
-  const token = await getToken({ req: req, secret });
-  if(!token){
+  const session = await auth();
+  if(!session){
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const { prompt, messages } = await req.json();

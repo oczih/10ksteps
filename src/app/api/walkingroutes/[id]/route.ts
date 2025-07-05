@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/mongoose';
 import WalkRoute from '@/app/models/walkroutemodel';
-import { getToken } from '@auth/core/jwt';
-const secret = process.env.NEXTAUTH_SECRET;
+import { auth } from '@/lib/auth-client';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await connectDB();
   
-  const token = await getToken({ req: request, secret });
-  if (!token) {
+  const session = await auth();
+  if (!session) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
     const { id } = await params;
@@ -29,8 +28,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectDB();
     
-    const token = await getToken({ req: request, secret });
-    if (!token) {
+    const session = await auth();
+    if (!session) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
       }
     const { id } = await params;
@@ -63,12 +62,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await connectDB();
   
-  const token = await getToken({ req: request, secret });
-  if (!token) {
+  const session = await auth();
+  if (!session) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
     const { id } = await params;
-    if (token.id !== id) {
+    if (session.user?.id !== id) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
     try{
