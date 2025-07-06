@@ -3,7 +3,7 @@
 
 ![](10kstepsdemo.gif)
 
-Live Demo: 10ksteps.vercel.app
+Live Demo: [10ksteps.vercel.app](https://10ksteps.vercel.app/)
 Users can:
 
 - Register/Login using Google
