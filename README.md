@@ -3,8 +3,7 @@
 
 ![](10kstepsdemo.gif)
 
-Live Demo: https://master.d2z9r186ynf667.amplifyapp.com/
-
+Live Demo: 10ksteps.vercel.app
 Users can:
 
 - Register/Login using Google
