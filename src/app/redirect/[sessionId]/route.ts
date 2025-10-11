@@ -5,8 +5,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
 });
 
-export async function GET(req: NextRequest, { params }: { params: { sessionId: string } }) {
-  const { sessionId } = params;
+interface Params {
+  sessionId: string;
+}
+// 🟢 POST: Add a new promotion
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<Params> }
+) {
+  const { sessionId } = await context.params;
   const returnUrl = req.nextUrl.searchParams.get("return");
 
   if (!sessionId) return new NextResponse("Missing session ID", { status: 400 });
