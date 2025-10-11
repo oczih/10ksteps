@@ -1,22 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 
-
-export async function GET(request: NextRequest, { params }: { params: Promise<{ sessionId: string }> }) {
-  const { sessionId } = await params;
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { sessionId: string } }
+) {
+  const sessionParam = params.sessionId; // Could be an ID or encoded URL
   const returnUrl = request.nextUrl.searchParams.get("return");
+
+  if (!sessionParam) {
+    return new NextResponse("Missing session parameter", { status: 400 });
+  }
   if (!returnUrl) {
-    return new NextResponse("Missing return url", { status: 400 });
-  }
-  if (!sessionId) {
-    return new NextResponse("Missing session ID", { status: 400 });
+    return new NextResponse("Missing return URL", { status: 400 });
   }
 
-  // Construct Stripe Checkout link
-  const stripeUrl = `https://checkout.stripe.com/pay/${sessionId}`;
+  // Decode the session param in case it was URL-encoded
+  let stripeUrl: string;
+  try {
+    const decoded = decodeURIComponent(sessionParam);
+    stripeUrl = decoded.startsWith("http")
+      ? decoded
+      : `https://checkout.stripe.com/pay/${decoded}`;
+  } catch {
+    stripeUrl = `https://checkout.stripe.com/pay/${sessionParam}`;
+  }
 
-  // Save return URL (optional if you want to track)
-  // You can store it in a DB or encode it in the redirect URL if needed
-
-  // Redirect to Stripe checkout
+  // ✅ Redirect user to Stripe checkout
   return NextResponse.redirect(stripeUrl);
 }
