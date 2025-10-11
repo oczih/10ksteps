@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
-  const sessionParam = params.sessionId; // Could be an ID or encoded URL
+export async function GET(request: NextRequest, { params }: { params: Promise<{ sessionParam: string }> }) {
+  const {sessionParam} = await params; // Could be an ID or encoded URL
   const returnUrl = request.nextUrl.searchParams.get("return");
 
   if (!sessionParam) {
