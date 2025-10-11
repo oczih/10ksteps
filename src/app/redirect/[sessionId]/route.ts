@@ -15,7 +15,7 @@ export async function GET(
 ) {
   const { sessionId } = await context.params;
   const returnUrl = req.nextUrl.searchParams.get("return");
-
+  console.log("Redirecting via cloak:", sessionId);
   if (!sessionId) return new NextResponse("Missing session ID", { status: 400 });
   if (!returnUrl) return new NextResponse("Missing return URL", { status: 400 });
 
