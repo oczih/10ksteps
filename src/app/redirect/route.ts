@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Final validation: must be a Stripe checkout URL
-  if (!decoded.startsWith("https://checkout.stripe.com")) {
+  if (!decoded.startsWith("https://checkout.stripe.com") && !decoded.startsWith("https://billing.stripe.com")) {
     return new NextResponse("Invalid redirect target", { status: 400 });
   }
 
