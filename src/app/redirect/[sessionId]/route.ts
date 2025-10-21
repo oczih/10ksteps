@@ -15,7 +15,7 @@ export async function GET(
   console.log("Redirecting via cloak:", sessionId);
   if (!sessionId) return new NextResponse("Missing session ID", { status: 400 });
   if (!returnUrl) return new NextResponse("Missing return URL", { status: 400 });
-  const stripe = new Stripe(process.env.STRIPE_SECRET_TEST!, {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2025-09-30.clover",
   });
   try {
